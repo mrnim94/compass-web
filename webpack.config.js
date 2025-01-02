@@ -21,7 +21,6 @@ module.exports = (env, args) => {
   let config = createWebConfig({
     ...args,
     hot: false,
-    mode: 'production',
     entry: path.resolve(__dirname, 'src', 'index.tsx'),
   });
 
@@ -34,16 +33,18 @@ module.exports = (env, args) => {
         '@mongodb-js/compass-components': require.resolve(
           '@mongodb-js/compass-components',
         ),
-        '@mongodb-js/compass-web': require.resolve('@mongodb-js/compass-web'),
+        '@haohanyang/compass-web': require.resolve('@haohanyang/compass-web'),
         '@emotion/server/create-instance': localPolyfill(
           '@emotion/server/create-instance',
         ),
         'hadron-document': require.resolve('hadron-document'),
         path: require.resolve('path-browserify'),
+        crypto: require.resolve("crypto-browserify"),
         url: require.resolve('whatwg-url'),
         tls: localPolyfill('tls'),
         net: localPolyfill('net'),
         stream: require.resolve('readable-stream'),
+        vm: require.resolve('vm-browserify')
       },
     },
     plugins: [
