@@ -2,7 +2,6 @@ import React, { useLayoutEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { resetGlobalCSS, css, Body } from '@mongodb-js/compass-components';
 import { CompassWeb } from '@mongodb-js/compass-web';
-// import { SandboxConnectionStorageProviver } from '../src/connection-storage';
 import { sandboxLogger } from './sandbox-logger';
 import { sandboxTelemetry } from './sandbox-telemetry';
 import { useAtlasProxySignIn } from './sandbox-atlas-sign-in';
@@ -60,9 +59,7 @@ const App = () => {
           ? // In the sandbox we're waiting for cert user to be propagated to
           // the clusters, it can take awhile on the first connection
           { connectTimeoutMS: 120_000, serverSelectionTimeoutMS: 120_000 }
-          : {
-            wsURL: "ws://test"
-          }
+          : {}
       }
     >
       <Body as="div" className={sandboxContainerStyles}>
@@ -89,4 +86,8 @@ const App = () => {
   );
 };
 
+
 ReactDOM.render(<App></App>, document.querySelector('#sandbox-app'));
+
+
+

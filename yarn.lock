@@ -2845,6 +2845,24 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@mongodb-js/prettier-config-compass@npm:^1.0.4":
+  version: 1.0.4
+  resolution: "@mongodb-js/prettier-config-compass@npm:1.0.4"
+  peerDependencies:
+    prettier: ^2.7.1
+  checksum: 10c0/731b4a8866d888da6cc4741d5f3bdade2c9bb683707c35f2c1fd63ae6f57fc39925bb744e73b0181777f13e3a079688297cee8b2ce18f6e76c9c6fe02f14de0a
+  languageName: node
+  linkType: hard
+
+"@mongodb-js/prettier-config-devtools@npm:^1.0.1":
+  version: 1.0.1
+  resolution: "@mongodb-js/prettier-config-devtools@npm:1.0.1"
+  peerDependencies:
+    prettier: ^2.3.2
+  checksum: 10c0/2af6dfd174a2b44b1dd8b1565bc948e613beb86e1849e048374529f06ee6554c50efc561efc2b4c36e1c2ad5d282a8aaff59739fc44ddd0bc7c5e73a2dda3065
+  languageName: node
+  linkType: hard
+
 "@mongodb-js/saslprep@npm:^1.1.9":
   version: 1.1.9
   resolution: "@mongodb-js/saslprep@npm:1.1.9"
@@ -4939,6 +4957,8 @@ __metadata:
     "@mongodb-js/compass-workspaces": "npm:^0.5.1"
     "@mongodb-js/connection-storage": "npm:^0.24.2"
     "@mongodb-js/devtools-proxy-support": "npm:^0.4.2"
+    "@mongodb-js/prettier-config-compass": "npm:^1.0.4"
+    "@mongodb-js/prettier-config-devtools": "npm:^1.0.1"
     "@mongodb-js/tsconfig-compass": "npm:^1.0.7"
     "@mongodb-js/webpack-config-compass": "npm:^1.4.9"
     "@types/prop-types": "npm:^15"
@@ -4956,6 +4976,7 @@ __metadata:
     jose: "npm:^5.9.6"
     os-browserify: "npm:^0.3.0"
     path-browserify: "npm:^1.0.1"
+    prettier: "npm:^3.4.2"
     process: "npm:^0.11.10"
     prop-types: "npm:^15.8.1"
     react: "npm:^17.0.2"
@@ -9920,6 +9941,15 @@ __metadata:
   bin:
     prebuild-install: bin.js
   checksum: 10c0/e64868ba9ef2068fd7264f5b03e5298a901e02a450acdb1f56258d88c09dea601eefdb3d1dfdff8513fdd230a92961712be0676192626a3b4d01ba154d48bdd3
+  languageName: node
+  linkType: hard
+
+"prettier@npm:^3.4.2":
+  version: 3.4.2
+  resolution: "prettier@npm:3.4.2"
+  bin:
+    prettier: bin/prettier.cjs
+  checksum: 10c0/99e076a26ed0aba4ebc043880d0f08bbb8c59a4c6641cdee6cdadf2205bdd87aa1d7823f50c3aea41e015e99878d37c58d7b5f0e663bba0ef047f94e36b96446
   languageName: node
   linkType: hard
 
