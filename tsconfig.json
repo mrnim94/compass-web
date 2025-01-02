@@ -1,0 +1,10 @@
+{
+    "extends": "@mongodb-js/tsconfig-compass/tsconfig.react.json",
+    "compilerOptions": {
+        "outDir": "dist"
+    },
+    "include": [
+        "src/**/*",
+        "polyfills/**/*",
+    ],
+}

@@ -1,0 +1,1 @@
+https://github.com/haohanyang/compass/blob/5ede8e9e68045a413ab594bcd4e2eef22e189d22/packages/compass-web/package.json
