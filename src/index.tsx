@@ -1,10 +1,9 @@
-import React, { useLayoutEffect } from 'react';
+import React from 'react';
 import ReactDOM from 'react-dom';
 import { resetGlobalCSS, css, Body } from '@mongodb-js/compass-components';
 import { CompassWeb } from '@haohanyang/compass-web';
 import { sandboxLogger } from './sandbox-logger';
 import { sandboxTelemetry } from './sandbox-telemetry';
-import { useAtlasProxySignIn } from './sandbox-atlas-sign-in';
 import { sandboxConnectionStorage, SandboxConnectionStorageProviver } from './sandbox-connection-storage';
 import { useWorkspaceTabRouter } from './sandbox-workspace-tab-router';
 
@@ -15,39 +14,9 @@ const sandboxContainerStyles = css({
 
 resetGlobalCSS();
 
-function getMetaEl(name: string) {
-  return (
-    document.querySelector(`meta[name="${name}" i]`) ??
-    (() => {
-      const el = document.createElement('meta');
-      el.setAttribute('name', name);
-      document.head.prepend(el);
-      return el;
-    })()
-  );
-}
-
 const App = () => {
   const [currentTab, updateCurrentTab] = useWorkspaceTabRouter();
-  const { status, projectParams } = useAtlasProxySignIn();
-  const { projectId, csrfToken, csrfTime } = projectParams ?? {};
-
-  const atlasServiceSandboxBackendVariant =
-    process.env.COMPASS_WEB_HTTP_PROXY_CLOUD_CONFIG === 'local'
-      ? 'web-sandbox-atlas-local'
-      : process.env.COMPASS_WEB_HTTP_PROXY_CLOUD_CONFIG === 'dev' ||
-        process.env.COMPASS_WEB_HTTP_PROXY_CLOUD_CONFIG === 'qa'
-        ? 'web-sandbox-atlas-dev'
-        : 'web-sandbox-atlas';
-
-  useLayoutEffect(() => {
-    getMetaEl('csrf-token').setAttribute('content', csrfToken ?? '');
-    getMetaEl('csrf-time').setAttribute('content', csrfTime ?? '');
-  }, [csrfToken, csrfTime]);
-
-  if (status === 'checking') {
-    return null;
-  }
+  const atlasServiceSandboxBackendVariant = 'web-sandbox-atlas-local'
 
   const isAtlas = false;
 
@@ -65,7 +34,7 @@ const App = () => {
       <Body as="div" className={sandboxContainerStyles}>
         <CompassWeb
           orgId={''}
-          projectId={projectId ?? ''}
+          projectId={''}
           onActiveWorkspaceTabChange={updateCurrentTab}
           initialWorkspace={currentTab ?? undefined}
           initialPreferences={{
