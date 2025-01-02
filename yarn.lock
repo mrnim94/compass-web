@@ -1713,6 +1713,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@haohanyang/compass-web@npm:^0.12.2-patch1":
+  version: 0.12.2-patch1
+  resolution: "@haohanyang/compass-web@npm:0.12.2-patch1"
+  peerDependencies:
+    react: ^17.0.2
+    react-dom: ^17.0.2
+  checksum: 10c0/36ef0038aff3e001110c110ba92a72180d5710d7b8bff974f7c2c79d94106b53a78333382720bd4fc6edfc2cadf8f5bbf77849d1b430e8c85191a6cefa47cf6f
+  languageName: node
+  linkType: hard
+
 "@isaacs/cliui@npm:^8.0.2":
   version: 8.0.2
   resolution: "@isaacs/cliui@npm:8.0.2"
@@ -2720,16 +2730,6 @@ __metadata:
     "@electron/remote": "npm:^2.1.2"
     electron: "npm:^32.2.7"
   checksum: 10c0/a4b09ee667b56993f8076dffda0f71dd7f0c742a0c21027343cf38cef85ead2f409adf2c9af16af51183e22848490cd150198d459a63c24804eec2042777838d
-  languageName: node
-  linkType: hard
-
-"@mongodb-js/compass-web@npm:^0.12.2":
-  version: 0.12.2
-  resolution: "@mongodb-js/compass-web@npm:0.12.2"
-  peerDependencies:
-    react: ^17.0.2
-    react-dom: ^17.0.2
-  checksum: 10c0/00d7f03debc8f1afb6ba38135b0ba3c4422d35ffe782a250a3b7bcc3e9e7d9c299b53cb08130fe6f92876e6f197016b48c6009355ec099fdee659dd51e88a4ab
   languageName: node
   linkType: hard
 
@@ -4952,8 +4952,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "compass-web@workspace:."
   dependencies:
+    "@haohanyang/compass-web": "npm:^0.12.2-patch1"
     "@mongodb-js/compass-components": "npm:^1.32.2"
-    "@mongodb-js/compass-web": "npm:^0.12.2"
     "@mongodb-js/compass-workspaces": "npm:^0.5.1"
     "@mongodb-js/connection-storage": "npm:^0.24.2"
     "@mongodb-js/devtools-proxy-support": "npm:^0.4.2"

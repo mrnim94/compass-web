@@ -3,7 +3,7 @@ import type {
   OpenWorkspaceOptions,
   WorkspaceTab,
 } from '@mongodb-js/compass-workspaces';
-import { getRouteFromWorkspaceTab, getWorkspaceTabFromRoute } from '@mongodb-js/compass-web';
+import { getRouteFromWorkspaceTab, getWorkspaceTabFromRoute } from '@haohanyang/compass-web';
 
 export function useWorkspaceTabRouter() {
   const [currentTab, setCurrentTab] = useState<OpenWorkspaceOptions | null>(

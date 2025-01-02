@@ -1,7 +1,7 @@
 import React, { useLayoutEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { resetGlobalCSS, css, Body } from '@mongodb-js/compass-components';
-import { CompassWeb } from '@mongodb-js/compass-web';
+import { CompassWeb } from '@haohanyang/compass-web';
 import { sandboxLogger } from './sandbox-logger';
 import { sandboxTelemetry } from './sandbox-telemetry';
 import { useAtlasProxySignIn } from './sandbox-atlas-sign-in';

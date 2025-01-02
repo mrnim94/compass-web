@@ -9,8 +9,8 @@
   "description": "",
   "packageManager": "yarn@4.6.0",
   "dependencies": {
+    "@haohanyang/compass-web": "^0.12.2-patch1",
     "@mongodb-js/compass-components": "^1.32.2",
-    "@mongodb-js/compass-web": "^0.12.2",
     "@mongodb-js/compass-workspaces": "^0.5.1",
     "@mongodb-js/connection-storage": "^0.24.2",
     "core-js": "^3.17.3",
