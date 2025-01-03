@@ -3,26 +3,24 @@
   "version": "0.1.0",
   "main": "app.js",
   "scripts": {
-    "build": "webpack --mode development",
-    "build-prod": "webpack --mode production",
-    "start": "node app.js"
+    "build": "webpack --mode production",
+    "build-dev": "webpack --mode development",
+    "start": "NODE_ENV=production node app.js",
+    "start-dev": "node app.js"
   },
   "author": "",
   "description": "",
-  "packageManager": "yarn@4.6.0",
   "dependencies": {
+    "express": "^4.21.1",
+    "ws": "^8.16.0"
+  },
+  "devDependencies": {
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
     "@haohanyang/compass-web": "^0.12.2-patch1",
     "@mongodb-js/compass-components": "^1.32.2",
     "@mongodb-js/compass-workspaces": "^0.5.1",
     "@mongodb-js/connection-storage": "^0.24.2",
-    "core-js": "^3.17.3",
-    "express": "^4.21.1",
-    "hadron-document": "^8.6.7",
-    "react": "^17.0.2",
-    "react-dom": "^17.0.2",
-    "ws": "^8.16.0"
-  },
-  "devDependencies": {
     "@mongodb-js/devtools-proxy-support": "^0.4.2",
     "@mongodb-js/prettier-config-compass": "^1.0.4",
     "@mongodb-js/prettier-config-devtools": "^1.0.1",
@@ -31,6 +29,7 @@
     "@types/prop-types": "^15",
     "@types/react": "^19.0.2",
     "@types/react-dom": "^19.0.2",
+    "hadron-document": "^8.6.7",
     "browser-process-hrtime": "^1.0.0",
     "buffer": "^6.0.3",
     "copy-webpack-plugin": "^12.0.2",
@@ -40,7 +39,6 @@
     "jose": "^5.9.6",
     "os-browserify": "^0.3.0",
     "path-browserify": "^1.0.1",
-    "prettier": "^3.4.2",
     "process": "^0.11.10",
     "prop-types": "^15.8.1",
     "readable-stream": "^4.5.0",
