@@ -4,6 +4,7 @@
   "main": "app.js",
   "scripts": {
     "build": "webpack --mode development",
+    "build-prod": "webpack --mode production",
     "start": "node app.js"
   },
   "author": "",

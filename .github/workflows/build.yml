@@ -1,0 +1,24 @@
+name: Build
+
+on:
+  push:
+    branches: [ "*" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: yarn
+      - run: yarn build-prod
+      - name: Deploy to Netlify
+        if: ${{ github.ref == 'refs/heads/master' }}
+        uses: netlify/actions/cli@master
+        with:
+            args: deploy --dir=dist --prod
+        env:
+            NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+            NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
