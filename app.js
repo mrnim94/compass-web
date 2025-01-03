@@ -3,9 +3,25 @@ const path = require('path');
 const fs = require('fs');
 const { createWebSocketProxy } = require('./ws-proxy');
 
+// Parse port from command line
+const args = process.argv;
+
+const portIndex = args.indexOf('-p');
+
+let port = 8080
+
+// Check if "-p" parameter is provided and is valid
+if (portIndex !== -1 && args[portIndex + 1]) {
+    port = parseInt(args[portIndex + 1], 10);
+    if (isNaN(port) || port < 0 || port > 65535) {
+        console.error(`Invalid port number: ${port}`);
+        process.exit(1)
+    }
+}
+
+
 const logger = console;
 const app = express();
-const PORT = 8080;
 
 let cleaningUp = false;
 let distPath;
@@ -23,10 +39,8 @@ app.get('*', (req, res) => {
     res.sendFile(path.join(distPath, 'index.html'));
 });
 
-const server = app.listen(PORT, () => {
-    const host = server.address().address;
-    const port = server.address().port;
-    logger.info(`Server is listening on ${host}:${port}`);
+const server = app.listen(port, () => {
+    logger.info(`Server is listening on ${server.address().address}:${server.address().port}`);
 
     const wsProxyServer = createWebSocketProxy(server);
 
