@@ -1,10 +1,10 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { resetGlobalCSS, css, Body } from '@mongodb-js/compass-components';
-import { CompassWeb } from '@haohanyang/compass-web';
+import { CompassWeb, SandboxConnectionStorageProvider } from '@haohanyang/compass-web';
 import { sandboxLogger } from './sandbox-logger';
 import { sandboxTelemetry } from './sandbox-telemetry';
-import { sandboxConnectionStorage, SandboxConnectionStorageProviver } from './sandbox-connection-storage';
+import { sandboxConnectionStorage } from './sandbox-connection-storage';
 import { useWorkspaceTabRouter } from './sandbox-workspace-tab-router';
 
 const sandboxContainerStyles = css({
@@ -16,12 +16,12 @@ resetGlobalCSS();
 
 const App = () => {
   const [currentTab, updateCurrentTab] = useWorkspaceTabRouter();
-  const atlasServiceSandboxBackendVariant = 'web-sandbox-atlas-local'
+  const atlasServiceSandboxBackendVariant = 'web-sandbox-atlas'
 
   const isAtlas = false;
 
   return (
-    <SandboxConnectionStorageProviver
+    <SandboxConnectionStorageProvider
       value={isAtlas ? null : sandboxConnectionStorage}
       extraConnectionOptions={
         isAtlas
@@ -51,7 +51,7 @@ const App = () => {
           onLog={sandboxLogger.log}
         ></CompassWeb>
       </Body>
-    </SandboxConnectionStorageProviver>
+    </SandboxConnectionStorageProvider>
   );
 };
 
