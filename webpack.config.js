@@ -28,6 +28,9 @@ module.exports = (env, args) => {
 
   return merge(config, {
     context: __dirname,
+    output: {
+      filename: "compass.js"
+    },
     resolve: {
       alias: {
         '@mongodb-js/compass-components': require.resolve(
