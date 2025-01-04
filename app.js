@@ -1,6 +1,7 @@
-const express = require('express');
 const path = require('path');
 const fs = require('fs');
+const express = require('express');
+const atlasRouter = require('./lib/atlas-router');
 const { createWebSocketProxy } = require('./lib/ws-proxy');
 
 // Parse port from command line
@@ -36,6 +37,8 @@ if (fs.existsSync(path.join(__dirname, 'dist', 'index.html'))) {
 }
 
 app.use(express.static(distPath));
+
+app.use('/cloud-mongodb-com', atlasRouter);
 
 app.get('*', (req, res) => {
     res.sendFile(path.join(distPath, 'index.html'));
