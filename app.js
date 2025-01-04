@@ -26,8 +26,10 @@ const app = express();
 let cleaningUp = false;
 let distPath;
 
-if (fs.existsSync(path.join(__dirname, 'dist'))) {
+if (fs.existsSync(path.join(__dirname, 'dist', 'index.html'))) {
     distPath = path.join(__dirname, 'dist');
+} else if (fs.existsSync(path.join(__dirname, 'index.html'))) {
+    distPath = __dirname, 'dist';
 } else {
     logger.error('Client artifacts not found')
     process.exit(1);

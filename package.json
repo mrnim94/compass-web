@@ -3,10 +3,8 @@
   "version": "0.1.0",
   "main": "app.js",
   "scripts": {
-    "build": "webpack --mode production",
-    "build-dev": "webpack --mode development",
-    "start": "NODE_ENV=production node app.js",
-    "start-dev": "node app.js"
+    "build": "webpack --env target=web",
+    "build-server": "webpack --env target=node"
   },
   "author": "",
   "description": "",
@@ -15,6 +13,7 @@
     "ws": "^8.16.0"
   },
   "devDependencies": {
+    "@babel/preset-env": "^7.26.0",
     "@haohanyang/compass-web": "^0.12.2-patch2",
     "@mongodb-js/compass-components": "^1.32.2",
     "@mongodb-js/compass-workspaces": "^0.5.1",
@@ -27,6 +26,7 @@
     "@types/prop-types": "^15",
     "@types/react": "^19.0.2",
     "@types/react-dom": "^19.0.2",
+    "babel-loader": "^9.2.1",
     "browser-process-hrtime": "^1.0.0",
     "buffer": "^6.0.3",
     "copy-webpack-plugin": "^12.0.2",
@@ -48,6 +48,7 @@
     "vm-browserify": "^1.1.2",
     "webpack": "^5.97.1",
     "webpack-cli": "^6.0.1",
+    "webpack-node-externals": "^3.0.0",
     "whatwg-url": "^13.0.0"
   }
 }

@@ -5,6 +5,7 @@ const {
   merge,
 } = require('@mongodb-js/webpack-config-compass');
 const CopyPlugin = require('copy-webpack-plugin');
+const nodeExternals = require('webpack-node-externals');
 
 function localPolyfill(name) {
   return path.resolve(__dirname, 'polyfills', ...name.split('/'), 'index.ts');
@@ -17,16 +18,45 @@ function localPolyfill(name) {
  */
 const MAX_COMPRESSION_FILE_SIZE = 10_000_000;
 
-module.exports = (env, args) => {
-  let config = createWebConfig({
-    ...args,
+module.exports = (env) => {
+  if (env.target === 'node') {
+    // Build server
+    return {
+      target: 'node',
+      entry: './app.js',
+      mode: process.env.NODE_ENV || 'development',
+      output: {
+        path: path.resolve(__dirname, 'dist'),
+        filename: 'app.js',
+      },
+      externals: [nodeExternals()],
+      module: {
+        rules: [
+          {
+            test: /\.js$/,
+            exclude: /node_modules/,
+            use: {
+              loader: 'babel-loader',
+              options: {
+                presets: ['@babel/preset-env'],
+              },
+            },
+          },
+        ],
+      },
+    };
+  }
+
+  // Build client
+  let clientConfig = createWebConfig({
     hot: false,
+    mode: env.production ? 'production' : 'development',
     entry: path.resolve(__dirname, 'src', 'index.tsx'),
   });
 
-  delete config.externals;
+  delete clientConfig.externals;
 
-  return merge(config, {
+  return merge(clientConfig, {
     context: __dirname,
     output: {
       filename: "compass.js"
