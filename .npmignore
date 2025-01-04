@@ -8,3 +8,5 @@ src
 start-mongo.sh
 tsconfig.json
 webpack.config.js
+.prettierrc.js
+.github
