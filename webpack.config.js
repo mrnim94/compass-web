@@ -53,7 +53,7 @@ module.exports = (env) => {
   // Build client
   let clientConfig = createWebConfig({
     hot: false,
-    mode: env.production ? 'production' : 'development',
+    mode: process.env.NODE_ENV || 'development',
     entry: path.resolve(__dirname, 'src', 'index.tsx'),
   });
 
