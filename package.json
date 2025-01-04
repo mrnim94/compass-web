@@ -1,7 +1,7 @@
 {
   "name": "compass-web",
   "version": "0.1.0",
-  "main": "app.js",
+  "bin": "dist/app.js",
   "scripts": {
     "build": "webpack --env target=web",
     "build-server": "webpack --env target=node"

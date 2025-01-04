@@ -30,6 +30,9 @@ module.exports = (env) => {
         filename: 'app.js',
       },
       externals: [nodeExternals()],
+      plugins: [
+        new webpack.BannerPlugin({ banner: "#!/usr/bin/env node\n", raw: true }),
+      ],
       module: {
         rules: [
           {
