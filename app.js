@@ -1,7 +1,7 @@
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
-const { createWebSocketProxy } = require('./ws-proxy');
+const { createWebSocketProxy } = require('./lib/ws-proxy');
 
 // Parse port from command line
 const args = process.argv;
