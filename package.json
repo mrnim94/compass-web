@@ -4,7 +4,8 @@
   "bin": "dist/app.js",
   "scripts": {
     "build": "webpack --env target=web",
-    "build-server": "webpack --env target=node"
+    "build-server": "webpack --env target=node",
+    "start": "node app.js"
   },
   "author": "Haohan Yang",
   "license": "SSPL",
