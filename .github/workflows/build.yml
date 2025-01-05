@@ -1,8 +1,14 @@
 name: Build
 
 on:
+  workflow_dispatch:
   push:
     branches: ['*']
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
 
 jobs:
   build:
@@ -12,6 +18,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Setup Pages
+        if: ${{ github.event.repository.private == false }}
+        uses: actions/configure-pages@v5
       - run: npm ci
       - name: Build frontend
         run: NODE_ENV=production npm run build
@@ -23,3 +32,12 @@ jobs:
         env:
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+      - name: Upload page artifact
+        if: ${{ github.event.repository.private == false }}
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'dist'
+      - name: Deploy to GitHub Pages
+        if: ${{ github.event.repository.private == false }}
+        id: deployment
+        uses: actions/deploy-pages@v4
