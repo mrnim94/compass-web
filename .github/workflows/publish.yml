@@ -64,9 +64,9 @@ jobs:
           fi
 
           if [[ "${{ github.event.repository.private }}" == "true" ]]; then
-            provenance='--provenance'
-          else
             provenance=''
+          else
+            provenance='--provenance'
           fi
 
           npm publish ${tag} ${provenance} --access public
