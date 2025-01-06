@@ -12,13 +12,36 @@ jobs:
       contents: read
       id-token: write
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.check-version.outputs.version }}
+      is_latest: ${{ steps.check-version.outputs.is_latest }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
           registry-url: 'https://registry.npmjs.org'
+      - name: Check version
+        id: check-version
+        run: |
+          version=$(node -e "console.log(require('./package.json').version);")
+
+          if [[ "${GITHUB_REF##*/v}" != "$version" ]]; then
+            echo "Tag and npm version don't match"
+            exit 1
+          fi
+
+          echo "version=${version}" >> $GITHUB_OUTPUT
+
+          if [[ $version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "is_latest=true"
+            echo "is_latest=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_latest=false"
+            echo "is_latest=false" >> $GITHUB_OUTPUT
+          fi
+
       - run: npm ci
       - name: Build compass-web
         run: |
@@ -28,63 +51,52 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          TAG="${GITHUB_REF##*/v}"
-          if [[ "$TAG" == *alpha* ]]; then
-              npm publish --tag alpha --access public
-          elif [[ "$TAG" == *beta* ]]; then
-              npm publish --tag beta --access public
+          version=${{ steps.check-version.outputs.version }}
+
+          if [[ "$version" == *alpha* ]]; then
+            tag='--tag alpha'
+          elif [[ "$version" == *beta* ]]; then
+            tag='--tag beta'
           elif [[ "$TAG" == *rc* ]]; then
-              npm publish --tag rc --access public
+            tag='--tag rc'
           else
-              npm publish --access public
+            tag=''
           fi
+
+          if [[ "${{ github.event.repository.private }}" == "true" ]]; then
+            provenance='--provenance'
+          else
+            provenance=''
+          fi
+
+          npm publish ${tag} ${provenance} --access public
+
   publish-docker:
     needs:
       - publish-npm
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Get version from tag
-        id: get-version-from-tag
-        run: |
-          version=${GITHUB_REF##*/v}
-          echo "version=${version}"
-          echo "version=${version}" >> $GITHUB_OUTPUT
-
-          if [[ $version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "is_latest=yes"
-            echo "is_latest=yes" >> $GITHUB_OUTPUT
-          else
-            echo "is_latest=no"
-            echo "is_latest=no" >> $GITHUB_OUTPUT
-          fi
-
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: haohanyang
           password: ${{ secrets.DOCKER_TOKEN }}
-      - name: Build and push
-        uses: docker/build-push-action@v6
-        with:
-          push: true
-          tags: haohanyang/compass-web:${{ steps.get-version-from-tag.outputs.version }}
-          platforms: linux/amd64,linux/arm64
 
       - name: Build and push 1
         uses: docker/build-push-action@v6
-        if: ${{ steps.get-version-from-tag.outputs.is_latest != 'yes' }}
+        if: ${{ needs.publish-npm.outputs.is_latest == 'true' }}
         with:
           push: true
-          tags: haohanyang/compass-web-amd64:${{ steps.get-version-from-tag.outputs.version }}
+          tags: haohanyang/compass-web-amd64:${{ needs.publish-npm }}
           platforms: linux/amd64
-          build-args: COMPASS_WEB_VERSION=${{ steps.get-version-from-tag.outputs.version }}
+          build-args: COMPASS_WEB_VERSION=${{ needs.publish-npm.outputs.version }}
 
       - name: Build and push 2
         uses: docker/build-push-action@v6
-        if: ${{ steps.get-version-from-tag.outputs.is_latest == 'yes' }}
+        if: ${{ needs.publish-npm.outputs.is_latest != 'true' }}
         with:
           push: true
-          tags: haohanyang/compass-web-amd64:${{ steps.get-version-from-tag.outputs.version }},haohanyang/compass-web-amd64:latest
+          tags: haohanyang/compass-web-amd64:${{ needs.publish-npm.outputs.version }},haohanyang/compass-web-amd64:latest
           platforms: linux/amd64
-          build-args: COMPASS_WEB_VERSION=${{ steps.get-version-from-tag.outputs.version }}
+          build-args: COMPASS_WEB_VERSION=${{ needs.publish-npm.outputs.version }}
