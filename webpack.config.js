@@ -11,13 +11,6 @@ function localPolyfill(name) {
   return path.resolve(__dirname, 'polyfills', ...name.split('/'), 'index.ts');
 }
 
-/**
- * Atlas Cloud uses in-flight compression that doesn't compress anything that is
- * bigger than 10MB, we want to make sure that compass-web assets stay under the
- * limit so that they are compressed when served
- */
-const MAX_COMPRESSION_FILE_SIZE = 10_000_000;
-
 module.exports = (env) => {
   if (env.target === 'node') {
     // Build server
@@ -31,7 +24,10 @@ module.exports = (env) => {
       },
       externals: [nodeExternals()],
       plugins: [
-        new webpack.BannerPlugin({ banner: "#!/usr/bin/env node\n", raw: true }),
+        new webpack.BannerPlugin({
+          banner: '#!/usr/bin/env node\n',
+          raw: true,
+        }),
       ],
       module: {
         rules: [
@@ -50,6 +46,8 @@ module.exports = (env) => {
     };
   }
 
+  const MAX_COMPRESSION_FILE_SIZE = 10_000_000;
+
   // Build client
   let clientConfig = createWebConfig({
     hot: false,
@@ -62,7 +60,7 @@ module.exports = (env) => {
   return merge(clientConfig, {
     context: __dirname,
     output: {
-      filename: "compass.js"
+      filename: 'compass.js',
     },
     resolve: {
       alias: {
@@ -75,12 +73,12 @@ module.exports = (env) => {
         ),
         'hadron-document': require.resolve('hadron-document'),
         path: require.resolve('path-browserify'),
-        crypto: require.resolve("crypto-browserify"),
+        crypto: require.resolve('crypto-browserify'),
         url: require.resolve('whatwg-url'),
         tls: localPolyfill('tls'),
         net: localPolyfill('net'),
         stream: require.resolve('readable-stream'),
-        vm: require.resolve('vm-browserify')
+        vm: require.resolve('vm-browserify'),
       },
     },
     plugins: [
@@ -91,6 +89,12 @@ module.exports = (env) => {
 
       new CopyPlugin({
         patterns: ['src/favicon.svg', 'src/index.html'],
+      }),
+
+      new webpack.DefinePlugin({
+        'process.env.NODE_ENV': process.env.NODE_ENV
+          ? `"${process.env.NODE_ENV}"`
+          : '"development"',
       }),
     ],
     performance: {

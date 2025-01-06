@@ -1,7 +1,9 @@
 const path = require('path');
 const fs = require('fs');
 const express = require('express');
+const session = require('express-session');
 const atlasRouter = require('./lib/atlas-router');
+const connectionRouter = require("./lib/connection-router")
 const { createWebSocketProxy } = require('./lib/ws-proxy');
 
 // Parse port from command line
@@ -36,9 +38,21 @@ if (fs.existsSync(path.join(__dirname, 'dist', 'index.html'))) {
     process.exit(1);
 }
 
+
 app.use(express.static(distPath));
 
+app.use(express.json());
+
+app.use(session({
+    secret: 'secret-key', // TODO
+    resave: false,
+    saveUninitialized: false,
+    cookie: { httpOnly: true } // TODO: secure tet to true if using HTTPS
+}));
+
 app.use('/cloud-mongodb-com', atlasRouter);
+
+app.use('/connections', connectionRouter);
 
 app.get('*', (req, res) => {
     res.sendFile(path.join(distPath, 'index.html'));

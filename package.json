@@ -20,6 +20,7 @@
   "description": "MongoDB Compass that runs on a browser",
   "dependencies": {
     "express": "^4.21.1",
+    "express-session": "^1.18.1",
     "ws": "^8.16.0"
   },
   "devDependencies": {

@@ -1,11 +1,14 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { resetGlobalCSS, css, Body } from '@mongodb-js/compass-components';
-import { CompassWeb, SandboxConnectionStorageProvider } from '@haohanyang/compass-web';
-import { sandboxLogger } from './sandbox-logger';
-import { sandboxTelemetry } from './sandbox-telemetry';
-import { sandboxConnectionStorage } from './sandbox-connection-storage';
-import { useWorkspaceTabRouter } from './sandbox-workspace-tab-router';
+import { CompassWeb } from '@haohanyang/compass-web';
+import { Logger } from './logger';
+import { Telemetry } from './telemetry';
+import {
+  AppConnectionStorage,
+  ApponnectionStorageProvider,
+} from './connection-storage';
+import { useWorkspaceTabRouter } from './workspace-tab-router';
 
 const sandboxContainerStyles = css({
   width: '100%',
@@ -16,21 +19,11 @@ resetGlobalCSS();
 
 const App = () => {
   const [currentTab, updateCurrentTab] = useWorkspaceTabRouter();
-  const atlasServiceSandboxBackendVariant = 'web-sandbox-atlas'
-
-  const isAtlas = false;
+  const sandboxConnectionStorage = new AppConnectionStorage();
 
   return (
-    <SandboxConnectionStorageProvider
-      value={isAtlas ? null : sandboxConnectionStorage}
-      extraConnectionOptions={
-        isAtlas
-          ? // In the sandbox we're waiting for cert user to be propagated to
-          // the clusters, it can take awhile on the first connection
-          { connectTimeoutMS: 120_000, serverSelectionTimeoutMS: 120_000 }
-          : {}
-      }
-    >
+    <ApponnectionStorageProvider value={sandboxConnectionStorage}>
+      {/* @ts-ignore */}
       <Body as="div" className={sandboxContainerStyles}>
         <CompassWeb
           orgId={''}
@@ -38,25 +31,22 @@ const App = () => {
           onActiveWorkspaceTabChange={updateCurrentTab}
           initialWorkspace={currentTab ?? undefined}
           initialPreferences={{
-            enablePerformanceAdvisorBanner: isAtlas,
-            enableAtlasSearchIndexes: !isAtlas,
-            maximumNumberOfActiveConnections: isAtlas ? 10 : undefined,
-            atlasServiceBackendPreset: atlasServiceSandboxBackendVariant,
-            enableCreatingNewConnections: !isAtlas,
-            enableGlobalWrites: isAtlas,
-            enableRollingIndexes: isAtlas,
+            enablePerformanceAdvisorBanner: false,
+            enableAtlasSearchIndexes: false,
+            maximumNumberOfActiveConnections: undefined,
+            atlasServiceBackendPreset: 'web-sandbox-atlas',
+            enableCreatingNewConnections: true,
+            enableGlobalWrites: false,
+            enableRollingIndexes: false,
           }}
-          onTrack={sandboxTelemetry.track}
-          onDebug={sandboxLogger.log}
-          onLog={sandboxLogger.log}
+          onTrack={Telemetry.track}
+          onDebug={Logger.log}
+          onLog={Logger.log}
         ></CompassWeb>
       </Body>
-    </SandboxConnectionStorageProvider>
+    </ApponnectionStorageProvider>
   );
 };
 
-
+// @ts-ignore
 ReactDOM.render(<App></App>, document.querySelector('#sandbox-app'));
-
-
-
