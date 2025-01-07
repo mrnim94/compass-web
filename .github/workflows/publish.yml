@@ -27,9 +27,11 @@ jobs:
         run: |
           version=$(node -e "console.log(require('./package.json').version);")
 
-          if [[ "${GITHUB_REF##*/v}" != "$version" ]]; then
-            echo "Tag and npm version don't match"
-            exit 1
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            if [[ "${GITHUB_REF##*/v}" != "$version" ]]; then
+              echo "Tag and npm version don't match"
+              exit 1
+            fi
           fi
 
           echo "version=${version}" >> $GITHUB_OUTPUT
