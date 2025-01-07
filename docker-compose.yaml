@@ -1,0 +1,14 @@
+services:
+  compass:
+    image: haohanyang/compass-web-amd64
+    container_name: compass-web-dev-compass
+    depends_on:
+      - mongo
+    ports:
+      - 8080:8080
+    links:
+      - mongo
+
+  mongo:
+    image: mongo
+    container_name: compass-web-dev-mongo

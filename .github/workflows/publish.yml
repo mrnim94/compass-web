@@ -87,7 +87,7 @@ jobs:
 
       - name: Build and push 1
         uses: docker/build-push-action@v6
-        if: ${{ needs.publish-npm.outputs.is_latest == 'true' }}
+        if: ${{ needs.publish-npm.outputs.is_latest != 'true' }}
         with:
           push: true
           tags: haohanyang/compass-web-amd64:${{ needs.publish-npm }}
@@ -96,7 +96,7 @@ jobs:
 
       - name: Build and push 2
         uses: docker/build-push-action@v6
-        if: ${{ needs.publish-npm.outputs.is_latest != 'true' }}
+        if: ${{ needs.publish-npm.outputs.is_latest == 'true' }}
         with:
           push: true
           tags: haohanyang/compass-web-amd64:${{ needs.publish-npm.outputs.version }},haohanyang/compass-web-amd64:latest
