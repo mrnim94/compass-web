@@ -1,3 +1,9 @@
+## 0.1.1 - 2025-01-09
+
+### Changed
+
+- Remove unnecessary files from published npm package
+
 ## 0.1.0 - 2025-01-09
 
 Initial release.
