@@ -1,6 +1,6 @@
 services:
   compass:
-    image: haohanyang/compass-web-amd64
+    image: haohanyang/compass-web
     container_name: compass-web-dev-compass
     depends_on:
       - mongo
