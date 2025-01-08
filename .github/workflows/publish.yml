@@ -65,13 +65,7 @@ jobs:
             tag=''
           fi
 
-          if [[ "${{ github.event.repository.private }}" == "true" ]]; then
-            provenance=''
-          else
-            provenance='--provenance'
-          fi
-
-          npm publish ${tag} ${provenance} --access public
+          npm publish ${tag} --provenance --access public
 
   publish-docker:
     needs:
@@ -88,19 +82,11 @@ jobs:
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      - name: Build and push 1
+      - name: Build and push
         uses: docker/build-push-action@v6
-        if: ${{ needs.publish-npm.outputs.is_latest != 'true' }}
         with:
           push: true
-          tags: haohanyang/compass-web:${{ needs.publish-npm }}
-          platforms: linux/amd64,linux/arm64
-          build-args: COMPASS_WEB_VERSION=${{ needs.publish-npm.outputs.version }}
-      - name: Build and push 2
-        uses: docker/build-push-action@v6
-        if: ${{ needs.publish-npm.outputs.is_latest == 'true' }}
-        with:
-          push: true
-          tags: haohanyang/compass-web:${{ needs.publish-npm.outputs.version }},haohanyang/compass-web:latest
+          tags: haohanyang/compass-web:${{ needs.publish-npm.outputs.version }}
+          provenance: mode=max
           platforms: linux/amd64,linux/arm64
           build-args: COMPASS_WEB_VERSION=${{ needs.publish-npm.outputs.version }}
