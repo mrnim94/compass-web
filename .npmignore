@@ -10,3 +10,7 @@ tsconfig.json
 webpack.config.js
 .prettierrc.js
 .github
+Dockerfile
+docker-compose.yaml
+.vscode
+images
