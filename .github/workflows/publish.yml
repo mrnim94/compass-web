@@ -90,3 +90,21 @@ jobs:
           provenance: mode=max
           platforms: linux/amd64,linux/arm64
           build-args: COMPASS_WEB_VERSION=${{ needs.publish-npm.outputs.version }}
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        if: ${{ needs.publish-npm.outputs.is_latest != 'true' }}
+        with:
+          push: true
+          tags: haohanyang/compass-web:${{ needs.publish-npm.outputs.version }}
+          provenance: mode=max
+          platforms: linux/amd64,linux/arm64
+          build-args: COMPASS_WEB_VERSION=${{ needs.publish-npm.outputs.version }}
+      - name: Build and push with latest tag
+        uses: docker/build-push-action@v6
+        if: ${{ needs.publish-npm.outputs.is_latest == 'true' }}
+        with:
+          push: true
+          tags: haohanyang/compass-web:${{ needs.publish-npm.outputs.version }},haohanyang/compass-web:latest
+          provenance: mode=max
+          platforms: linux/amd64,linux/arm64
+          build-args: COMPASS_WEB_VERSION=${{ needs.publish-npm.outputs.version }}

@@ -12,3 +12,5 @@ services:
   mongo:
     image: mongo
     container_name: compass-web-dev-mongo
+    ports:
+      - 27017:27017
