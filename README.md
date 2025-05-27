@@ -25,6 +25,21 @@ docker run -it --rm -p 8080:8080 haohanyang/compass-web
 
 Then access your MongoDB compass on http://localhost:8080
 
+### Optional: Set Default MongoDB Connection
+
+You can optionally set the `MONGODB_URI` environment variable to define a default MongoDB connection string.  
+If not set, users will be prompted to enter a connection string in the UI.
+
+**Example with Docker:**
+```
+docker run -it --rm -p 8080:8080 -e MONGODB_URI="mongodb://localhost:27017" haohanyang/compass-web
+```
+
+**Example with npm:**
+```
+MONGODB_URI="mongodb://localhost:27017" npx compass-web -p 8080
+```
+
 ## Credits
 
 - [MongoDB Compass](https://github.com/mongodb-js/compass)
