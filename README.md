@@ -10,6 +10,8 @@ MongoDB Compass that runs on a browser. Most of the features on [MongoDB Compass
 
 ## Get started
 
+### Quick start
+
 - npm
 
 ```
