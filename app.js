@@ -54,6 +54,13 @@ app.use('/cloud-mongodb-com', atlasRouter);
 
 app.use('/connections', connectionRouter);
 
+// Serve the default MongoDB URI from environment variable
+app.get('/default-connection', (req, res) => {
+    res.json({
+        uri: process.env.MONGODB_URI || ''
+    });
+});
+
 app.get('*', (req, res) => {
     res.sendFile(path.join(distPath, 'index.html'));
 });
