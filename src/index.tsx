@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { resetGlobalCSS, css, Body } from '@mongodb-js/compass-components';
 import { CompassWeb } from '@haohanyang/compass-web';
@@ -20,6 +20,37 @@ resetGlobalCSS();
 const App = () => {
   const [currentTab, updateCurrentTab] = useWorkspaceTabRouter();
   const sandboxConnectionStorage = new AppConnectionStorage();
+  const [defaultConnectionString, setDefaultConnectionString] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    fetch('/default-connection')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.uri) {
+          setDefaultConnectionString(data.uri);
+        }
+      });
+  }, []);
+
+  // Inject default connection if none exist
+  useEffect(() => {
+    if (!defaultConnectionString) return;
+    sandboxConnectionStorage.loadAll().then((connections) => {
+      if (connections.length === 0) {
+        // Add a default connection
+        sandboxConnectionStorage.save({
+          connectionInfo: {
+            id: 'default-env-connection',
+            connectionOptions: {
+              connectionString: defaultConnectionString,
+            },
+            favorite: { name: 'Default from ENV' },
+            lastUsed: new Date().toISOString(),
+          },
+        });
+      }
+    });
+  }, [defaultConnectionString]);
 
   return (
     <ApponnectionStorageProvider value={sandboxConnectionStorage}>
@@ -42,6 +73,8 @@ const App = () => {
           onTrack={Telemetry.track}
           onDebug={Logger.log}
           onLog={Logger.log}
+          // Pass the default connection string if available
+          defaultConnectionString={defaultConnectionString}
         ></CompassWeb>
       </Body>
     </ApponnectionStorageProvider>
