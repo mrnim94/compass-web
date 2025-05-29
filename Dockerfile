@@ -1,9 +1,17 @@
 FROM node:22.16.0-slim
 
-ARG COMPASS_WEB_VERSION=latest
+WORKDIR /app
 
-RUN npm i -g compass-web@${COMPASS_WEB_VERSION}
+COPY --from=build /app/dist ./dist
+COPY --from=build /app/app.js ./
+COPY --from=build /app/package.json ./
+COPY --from=build /app/lib ./lib
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/LICENSE ./
 
-USER node
+ENV NODE_ENV=production
 
-CMD [ "compass-web" ]
+EXPOSE 8080
+
+# MONGODB_URI can be set at runtime
+CMD ["node", "app.js"]
