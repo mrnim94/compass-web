@@ -19,12 +19,12 @@
   },
   "description": "MongoDB Compass that runs on a browser",
   "dependencies": {
+    "@mongodb-js/compass-web": "file:../compass/mongodb-js-compass-web-0.15.0.tgz",
     "express": "^4.21.1",
     "express-session": "^1.18.1",
     "ws": "^8.16.0"
   },
   "devDependencies": {
-    "@mongodb-js/compass-web": "file:../compass/mongodb-js-compass-web-0.15.0.tgz",
     "@mongodb-js/compass-components": "file:../compass/mongodb-js-compass-components-1.35.2.tgz",
     "@mongodb-js/devtools-proxy-support": "^0.4.4",
     "@mongodb-js/tsconfig-compass": "^1.2.8",

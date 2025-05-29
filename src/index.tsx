@@ -2,9 +2,9 @@ import React, { useEffect, useRef } from "react";
 import ReactDOM from "react-dom";
 import {
   CompassWeb,
-  // SandboxPreferencesUpdateProvider,
-  // type SandboxPreferencesUpdateTrigger,
-  // useCompassWebPreferences,
+  SandboxPreferencesUpdateProvider,
+  type SandboxPreferencesUpdateTrigger,
+  useCompassWebPreferences,
 } from "@mongodb-js/compass-web";
 import {
   resetGlobalCSS,
@@ -21,23 +21,27 @@ const sandboxContainerStyles = css({
 resetGlobalCSS();
 
 const App = () => {
-  // const pref = useCompassWebPreferences();
-  // const sandboxPreferencesUpdateTrigger =
-  //   useRef<null | SandboxPreferencesUpdateTrigger>(null);
+  const pref = useCompassWebPreferences();
+  const sandboxPreferencesUpdateTrigger =
+    useRef<null | SandboxPreferencesUpdateTrigger>(null);
 
-  // sandboxPreferencesUpdateTrigger.current = (updatePreference) => {
-  //   return () => updatePreference({});
-  // };
+  sandboxPreferencesUpdateTrigger.current = (updatePreference) => {
+    return () => updatePreference({});
+  };
 
   return (
-    <Body as="div" className={sandboxContainerStyles}>
-      <CompassWeb
-        projectId="projectid"
-        orgId="orgid"
-        onActiveWorkspaceTabChange={() => {}}
-        onFailToLoadConnections={() => {}}
-      ></CompassWeb>
-    </Body>
+    <SandboxPreferencesUpdateProvider
+      value={sandboxPreferencesUpdateTrigger.current}
+    >
+      <Body as="div" className={sandboxContainerStyles}>
+        <CompassWeb
+          projectId="projectid"
+          orgId="orgid"
+          onActiveWorkspaceTabChange={() => {}}
+          onFailToLoadConnections={() => {}}
+        ></CompassWeb>
+      </Body>
+    </SandboxPreferencesUpdateProvider>
   );
 };
 
