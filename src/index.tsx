@@ -5,6 +5,7 @@ import {
   SandboxPreferencesUpdateProvider,
   type SandboxPreferencesUpdateTrigger,
   useCompassWebPreferences,
+  SandboxConnectionStorageProvider,
 } from "@mongodb-js/compass-web";
 import {
   resetGlobalCSS,
@@ -12,6 +13,7 @@ import {
   Body,
   openToast,
 } from "@mongodb-js/compass-components";
+import { sandboxConnectionStorage } from "./connection-storage.tsx";
 
 const sandboxContainerStyles = css({
   width: "100%",
@@ -30,18 +32,20 @@ const App = () => {
   };
 
   return (
-    <SandboxPreferencesUpdateProvider
-      value={sandboxPreferencesUpdateTrigger.current}
-    >
-      <Body as="div" className={sandboxContainerStyles}>
-        <CompassWeb
-          projectId="projectid"
-          orgId="orgid"
-          onActiveWorkspaceTabChange={() => {}}
-          onFailToLoadConnections={() => {}}
-        ></CompassWeb>
-      </Body>
-    </SandboxPreferencesUpdateProvider>
+    <SandboxConnectionStorageProvider value={sandboxConnectionStorage}>
+      <SandboxPreferencesUpdateProvider
+        value={sandboxPreferencesUpdateTrigger.current}
+      >
+        <Body as="div" className={sandboxContainerStyles}>
+          <CompassWeb
+            projectId="projectid"
+            orgId="orgid"
+            onActiveWorkspaceTabChange={() => {}}
+            onFailToLoadConnections={() => {}}
+          ></CompassWeb>
+        </Body>
+      </SandboxPreferencesUpdateProvider>
+    </SandboxConnectionStorageProvider>
   );
 };
 
