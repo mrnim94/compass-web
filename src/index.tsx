@@ -1,11 +1,11 @@
 import React from "react";
 import ReactDOM from "react-dom";
-import {
-  CompassWeb,
-  SandboxConnectionStorageProvider,
-} from "@mongodb-js/compass-web";
+import { CompassWeb } from "@mongodb-js/compass-web";
 import { resetGlobalCSS, css, Body } from "@mongodb-js/compass-components";
-import { SandboxConnectionStorage } from "./connection-storage";
+import {
+  SandboxConnectionStorage,
+  SandboxConnectionStorageProvider,
+} from "./connection-storage";
 
 const sandboxContainerStyles = css({
   width: "100%",

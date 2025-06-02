@@ -3,7 +3,7 @@ name: Build
 on:
   workflow_dispatch:
   push:
-    branches: ['*']
+    branches: ["*"]
 
 permissions:
   contents: read
@@ -15,14 +15,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: pnpm/action-setup@v4
+        name: Install pnpm
+        with:
+          version: 8.15.4
+          run_install: false
       - uses: actions/setup-node@v4
         with:
           node-version: 22
       - name: Setup Pages
+        if: ${{ github.ref == 'refs/heads/master' }}
         uses: actions/configure-pages@v5
-      - run: npm ci
+      - run: pnpm i --frozen-lockfile
+      - name: Bootstrap
+        run: bash bootstrap.sh
       - name: Build frontend
-        run: NODE_ENV=production npm run build
+        run: npm run build
       - name: Deploy to Netlify
         if: ${{ github.ref == 'refs/heads/master' }}
         uses: netlify/actions/cli@master
@@ -34,7 +44,8 @@ jobs:
       - name: Upload page artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: 'dist'
+          path: dist
       - name: Deploy to GitHub Pages
+        if: ${{ github.ref == 'refs/heads/master' }}
         id: deployment
         uses: actions/deploy-pages@v4
