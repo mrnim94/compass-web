@@ -84,6 +84,8 @@ module.exports = (env, args) => {
         electron: false,
         "hadron-ipc": false,
         worker_threads: false,
+        snappy: localPolyfill("throwError"),
+        "mongodb-client-encryption": localPolyfill("throwError"),
       },
     },
     plugins: [
