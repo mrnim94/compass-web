@@ -68,6 +68,7 @@ module.exports = (env, args) => {
         zlib: localPolyfill("zlib"),
         tls: localPolyfill("tls"),
         dns: localPolyfill("dns"),
+        net: localPolyfill("net", false),
         stream: require.resolve("readable-stream"),
         buffer: require.resolve("buffer/"),
         url: require.resolve("whatwg-url"),
