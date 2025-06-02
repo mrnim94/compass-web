@@ -1,19 +1,11 @@
-import React, { useEffect, useRef } from "react";
+import React from "react";
 import ReactDOM from "react-dom";
 import {
   CompassWeb,
-  SandboxPreferencesUpdateProvider,
-  type SandboxPreferencesUpdateTrigger,
-  useCompassWebPreferences,
   SandboxConnectionStorageProvider,
 } from "@mongodb-js/compass-web";
-import {
-  resetGlobalCSS,
-  css,
-  Body,
-  openToast,
-} from "@mongodb-js/compass-components";
-import { sandboxConnectionStorage } from "./connection-storage.tsx";
+import { resetGlobalCSS, css, Body } from "@mongodb-js/compass-components";
+import { SandboxConnectionStorage } from "./connection-storage";
 
 const sandboxContainerStyles = css({
   width: "100%",
@@ -23,30 +15,27 @@ const sandboxContainerStyles = css({
 resetGlobalCSS();
 
 const App = () => {
-  const pref = useCompassWebPreferences();
-  const sandboxPreferencesUpdateTrigger =
-    useRef<null | SandboxPreferencesUpdateTrigger>(null);
-
-  sandboxPreferencesUpdateTrigger.current = (updatePreference) => {
-    return () => updatePreference({});
-  };
-
+  const connectionStorage = new SandboxConnectionStorage();
   return (
-    <SandboxConnectionStorageProvider value={sandboxConnectionStorage}>
-      <SandboxPreferencesUpdateProvider
-        value={sandboxPreferencesUpdateTrigger.current}
-      >
-        <Body as="div" className={sandboxContainerStyles}>
-          <CompassWeb
-            projectId="projectid"
-            orgId="orgid"
-            onActiveWorkspaceTabChange={() => {}}
-            onFailToLoadConnections={() => {}}
-          ></CompassWeb>
-        </Body>
-      </SandboxPreferencesUpdateProvider>
+    <SandboxConnectionStorageProvider value={connectionStorage}>
+      <Body as="div" className={sandboxContainerStyles}>
+        <CompassWeb
+          projectId="projectid"
+          orgId="orgid"
+          initialPreferences={{
+            enableCreatingNewConnections: true,
+            enableImportExport: true,
+          }}
+          onActiveWorkspaceTabChange={() => {
+            console.log("onActiveWorkspaceTabChange");
+          }}
+          onFailToLoadConnections={() => {
+            console.error("Failed to load connections");
+          }}
+        ></CompassWeb>
+      </Body>
     </SandboxConnectionStorageProvider>
   );
 };
 
-ReactDOM.render(<App></App>, document.querySelector("#sandbox-app")!);
+ReactDOM.render(<App />, document.querySelector("#sandbox-app")!);
