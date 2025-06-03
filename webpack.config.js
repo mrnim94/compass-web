@@ -74,7 +74,7 @@ module.exports = (env, args) => {
         url: require.resolve("whatwg-url"),
         path: require.resolve("path-browserify"),
         crypto: require.resolve("crypto-browserify"),
-        os: require.resolve("os-browserify"),
+        os: require.resolve("os-browserify/browser"),
         vm: require.resolve("vm-browserify"),
         "util/types": localPolyfill("util/types"),
         util: require.resolve("util/"),
