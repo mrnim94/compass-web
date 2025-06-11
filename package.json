@@ -1,11 +1,11 @@
 {
   "name": "compass-web",
   "version": "0.1.1",
-  "bin": "dist/app.js",
+  "bin": "app.js",
   "source": "src/index.html",
   "scripts": {
     "build": "webpack",
-    "start": "python3 -m http.server -d dist"
+    "start": "node app.js"
   },
   "author": "Haohan Yang",
   "license": "SSPL",
@@ -19,9 +19,9 @@
   },
   "description": "MongoDB Compass that runs on a browser",
   "dependencies": {
-    "express": "^4.21.1",
-    "express-session": "^1.18.1",
-    "ws": "^8.16.0"
+    "fastify": "^5.3.3",
+    "@fastify/static": "^8.2.0",
+    "@fastify/websocket": "^11.1.0"
   },
   "devDependencies": {
     "@mongodb-js/compass-app-stores": "^7.40.0",
@@ -37,6 +37,7 @@
     "buffer": "^6.0.3",
     "compass-preferences-model": "^2.36.0",
     "copy-webpack-plugin": "^13.0.0",
+    "core-js": "^3.17.3",
     "crypto-browserify": "^3.12.0",
     "is-ip": "^5.0.1",
     "jose": "^6.0.11",
@@ -49,8 +50,7 @@
     "timers-browserify": "^2.0.12",
     "util": "^0.12.5",
     "vm-browserify": "^1.1.2",
-    "whatwg-url": "^13.0.0",
-    "core-js": "^3.17.3"
+    "whatwg-url": "^13.0.0"
   },
   "pnpm": {
     "overrides": {
@@ -58,13 +58,11 @@
       "@mongodb-js/eslint-plugin-compass": "link:./compass/configs/eslint-plugin-compass",
       "@mongodb-js/mocha-config-compass": "link:./compass/configs/mocha-config-compass",
       "@mongodb-js/prettier-config-compass": "link:./compass/configs/prettier-config-compass",
-      "@mongodb-js/testing-library-compass": "link:./compass/configs/testing-library-compass",
       "@mongodb-js/tsconfig-compass": "link:./compass/configs/tsconfig-compass",
       "@mongodb-js/webpack-config-compass": "https://github.com/haohanyang/compass/releases/download/v1.46.2/mongodb-js-webpack-config-compass-1.6.8.tgz",
       "@mongodb-js/atlas-service": "link:./compass/packages/atlas-service",
       "bson-transpilers": "link:./compass/packages/bson-transpilers",
       "mongodb-collection-model": "link:./compass/packages/collection-model",
-      "mongodb-compass": "link:./compass/packages/compass",
       "@mongodb-js/compass-aggregations": "link:./compass/packages/compass-aggregations",
       "@mongodb-js/compass-app-stores": "link:./compass/packages/compass-app-stores",
       "@mongodb-js/compass-collection": "link:./compass/packages/compass-collection",
@@ -74,7 +72,6 @@
       "@mongodb-js/compass-connections-navigation": "link:./compass/packages/compass-connections-navigation",
       "@mongodb-js/compass-crud": "link:./compass/packages/compass-crud",
       "@mongodb-js/compass-data-modeling": "link:./compass/packages/compass-data-modeling",
-      "compass-e2e-tests": "link:./compass/packages/compass-e2e-tests",
       "@mongodb-js/compass-editor": "link:./compass/packages/compass-editor",
       "@mongodb-js/compass-explain-plan": "link:./compass/packages/compass-explain-plan",
       "@mongodb-js/compass-export-to-language": "link:./compass/packages/compass-export-to-language",
@@ -96,7 +93,6 @@
       "@mongodb-js/compass-settings": "link:./compass/packages/compass-settings",
       "@mongodb-js/compass-shell": "link:./compass/packages/compass-shell",
       "@mongodb-js/compass-sidebar": "link:./compass/packages/compass-sidebar",
-      "@mongodb-js/compass-smoke-tests": "link:./compass/packages/compass-smoke-tests",
       "@mongodb-js/compass-telemetry": "link:./compass/packages/compass-telemetry",
       "@mongodb-js/compass-test-server": "link:./compass/packages/compass-test-server",
       "@mongodb-js/compass-user-data": "link:./compass/packages/compass-user-data",

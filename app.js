@@ -1,111 +1,171 @@
-const path = require("path");
-const fs = require("fs");
-const express = require("express");
-const session = require("express-session");
-const atlasRouter = require("./lib/atlas-router");
-const connectionRouter = require("./lib/connection-router");
-const { createWebSocketProxy } = require("./lib/ws-proxy");
+const path = require('path');
+const fastify = require('fastify')({ logger: true });
+const net = require('net');
+const tls = require('tls');
 
-// Parse port from command line
-const args = process.argv;
+const SOCKET_ERROR_EVENT_LIST = ['error', 'close', 'timeout', 'parseError'];
 
-const portIndex = args.indexOf("-p");
+function encodeStringMessageWithTypeByte(message) {
+  const utf8Encoder = new TextEncoder();
+  const utf8Array = utf8Encoder.encode(message);
+  return encodeMessageWithTypeByte(utf8Array, 0x01);
+}
 
-let port = 8080;
+function encodeBinaryMessageWithTypeByte(message) {
+  return encodeMessageWithTypeByte(message, 0x02);
+}
 
-// Check if "-p" parameter is provided and is valid
-if (portIndex !== -1 && args[portIndex + 1]) {
-  port = parseInt(args[portIndex + 1], 10);
-  if (isNaN(port) || port < 0 || port > 65535) {
-    console.error(`Invalid port number: ${port}`);
-    process.exit(1);
+function encodeMessageWithTypeByte(message, type) {
+  const encoded = new Uint8Array(message.length + 1);
+  encoded[0] = type;
+  encoded.set(message, 1);
+  return encoded;
+}
+
+function decodeMessageWithTypeByte(message) {
+  const typeByte = message[0];
+  if (typeByte === 0x01) {
+    const jsonBytes = message.subarray(1);
+    const textDecoder = new TextDecoder('utf-8');
+    const jsonStr = textDecoder.decode(jsonBytes);
+    return JSON.parse(jsonStr);
+  } else if (typeByte === 0x02) {
+    return message.subarray(1);
   }
 }
 
-const logger = console;
-const app = express();
-
 let cleaningUp = false;
-let distPath;
 
-if (fs.existsSync(path.join(__dirname, "dist", "index.html"))) {
-  distPath = path.join(__dirname, "dist");
-} else if (fs.existsSync(path.join(__dirname, "index.html"))) {
-  (distPath = __dirname), "dist";
-} else {
-  logger.error("Client artifacts not found");
-  process.exit(1);
-}
+fastify.register(require('@fastify/static'), {
+  root: path.join(__dirname, 'dist'),
+});
 
-app.use(express.static(distPath));
+fastify.register(require('@fastify/websocket'));
 
-app.use(express.json());
+fastify.get('/nds/clusters/:projectId', function handler(request, reply) {
+  reply.send([]);
+});
 
-app.use(
-  session({
-    secret: "secret-key", // TODO
-    resave: false,
-    saveUninitialized: false,
-    cookie: { httpOnly: true }, // TODO: secure tet to true if using HTTPS
-  })
+fastify.get(
+  '/explorer/v1/groups/:projectId/clusters/connectionInfo',
+  function handler(request, reply) {
+    reply.send([
+      {
+        id: 'unique-id',
+        connectionOptions: {
+          connectionString: 'mongodb://localhost:27017',
+        },
+        atlasMetadata: {
+          orgId: 'orgid',
+          projectId: 'projectid',
+          clusterUniqueId: 'uniqueid',
+          clusterName: 'mycluster',
+          clusterType: 'SHARDED',
+          clusterState: 'IDLE',
+          metricsId: 'metricsid',
+          metricsType: 'cluster',
+          supports: {
+            globalWrites: false,
+            rollingIndexes: false,
+          },
+        },
+      },
+    ]);
+  }
 );
 
-app.use("/cloud-mongodb-com", atlasRouter);
+fastify.register(async function (fastify) {
+  fastify.get(
+    '/clusterConnection/:projectId',
+    { websocket: true },
+    (socket, req) => {
+      let mongoSocket;
 
-app.use("/connections", connectionRouter);
+      console.log(
+        'new ws connection (total %s)',
+        fastify.websocketServer.clients.size
+      );
 
-// Serve the default MongoDB URI from environment variable
-app.get("/default-connection", (req, res) => {
-  res.json({
-    uri: process.env.MONGODB_URI || "",
-  });
-});
+      socket.on('message', async (message) => {
+        if (mongoSocket) {
+          mongoSocket.write(decodeMessageWithTypeByte(message), 'binary');
+        } else {
+          // First message before socket is created is with connection info
+          const { tls: useSecureConnection, ...connectOptions } =
+            decodeMessageWithTypeByte(message);
 
-app.get("*", (req, res) => {
-  res.sendFile(path.join(distPath, "index.html"));
-});
+          console.log(
+            'setting up new%s connection to %s:%s',
+            useSecureConnection ? ' secure' : '',
+            connectOptions.host,
+            connectOptions.port
+          );
+          mongoSocket = useSecureConnection
+            ? tls.connect({
+                servername: connectOptions.host,
+                ...connectOptions,
+              })
+            : net.createConnection(connectOptions);
+          mongoSocket.setKeepAlive(true, 300000);
+          mongoSocket.setTimeout(30000);
+          mongoSocket.setNoDelay(true);
+          const connectEvent = useSecureConnection
+            ? 'secureConnect'
+            : 'connect';
+          SOCKET_ERROR_EVENT_LIST.forEach((evt) => {
+            mongoSocket.on(evt, (err) => {
+              console.log('server socket error event (%s)', evt, err);
+              socket.close(evt === 'close' ? 1001 : 1011);
+            });
+          });
+          mongoSocket.on(connectEvent, () => {
+            console.log(
+              'server socket connected at %s:%s',
+              connectOptions.host,
+              connectOptions.port
+            );
+            mongoSocket.setTimeout(0);
+            const encoded = encodeStringMessageWithTypeByte(
+              JSON.stringify({ preMessageOk: 1 })
+            );
+            socket.send(encoded);
+          });
+          mongoSocket.on('data', async (data) => {
+            socket.send(encodeBinaryMessageWithTypeByte(data));
+          });
+        }
+      });
 
-const server = app.listen(port, () => {
-  logger.info(
-    `Server is listening on ${server.address().address}:${
-      server.address().port
-    }`
+      socket.on('close', () => {
+        logger.log('ws closed');
+        mongoSocket?.removeAllListeners();
+        mongoSocket?.end();
+      });
+    }
   );
+});
 
-  const wsProxyServer = createWebSocketProxy(server);
+fastify.setNotFoundHandler(function (request, reply) {
+  reply.sendFile('index.html');
+});
 
-  for (const signal of ["SIGINT", "SIGTERM"]) {
+fastify.listen({ port: 3000 }, (err) => {
+  if (err) {
+    fastify.log.error(err);
+    process.exit(1);
+  }
+
+  for (const signal of ['SIGINT', 'SIGTERM']) {
     process.on(signal, () => {
       if (cleaningUp) {
         return false;
       }
 
       cleaningUp = true;
-      logger.log("Cleaning up before exit");
 
-      void Promise.allSettled([
-        server.closeAllConnections(),
-        new Promise((resolve) => {
-          server.close(resolve);
-        }),
-
-        Array.from(wsProxyServer.clients.values()).map((ws) => {
-          return ws.terminate();
-        }),
-        new Promise((resolve) => {
-          wsProxyServer.close(resolve);
-        }),
-      ]).finally(() => {
-        logger.log("Done cleaning up");
-        process.exitCode = 0;
+      fastify.close(() => {
         process.exit();
       });
     });
   }
-
-  [process.stdout, process.stderr].forEach((stream) => {
-    stream.on("error", (err) => {
-      logger.error(err);
-    });
-  });
 });
