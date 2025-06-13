@@ -1,4 +1,4 @@
-FROM node:20-slim
+FROM node:22.16.0-slim
 
 ARG COMPASS_WEB_VERSION=latest
 

@@ -1,0 +1,62 @@
+name: Publish compass-web to npm
+
+on:
+  workflow_dispatch:
+
+jobs:
+  publish-npm:
+    permissions:
+      contents: read
+      id-token: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: pnpm/action-setup@v4
+        name: Install pnpm
+        with:
+          version: 8.15.4
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check version
+        id: check-version
+        run: |
+          version=$(node -e "console.log(require('./package.json').version);")
+
+          if npm view "compass-web@$version" version > /dev/null 2>&1; then
+            echo "compass-web@$version already exists on npm"
+            exit 1
+          fi
+
+          echo "version=${version}" >> $GITHUB_OUTPUT
+
+          if [[ $version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "is_latest=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_latest=false" >> $GITHUB_OUTPUT
+          fi
+      - name: Bootstrap
+        run: bash bootstrap.sh
+      - run: pnpm i --frozen-lockfile
+      - name: Build compass-web
+        run: NODE_ENV=production npm run build
+      - name: Publish compass-web
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          version=${{ steps.check-version.outputs.version }}
+
+          if [[ "$version" == *alpha* ]]; then
+            tag='--tag alpha'
+          elif [[ "$version" == *beta* ]]; then
+            tag='--tag beta'
+          elif [[ "$TAG" == *rc* ]]; then
+            tag='--tag rc'
+          else
+            tag=''
+          fi
+
+          npm publish ${tag} --provenance --access public

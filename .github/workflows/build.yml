@@ -25,12 +25,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Setup Pages
-        if: ${{ github.ref == 'refs/heads/master' }}
-        uses: actions/configure-pages@v5
-      - run: pnpm i --frozen-lockfile
       - name: Bootstrap
         run: bash bootstrap.sh
+      - run: pnpm i --frozen-lockfile
       - name: Build frontend
         run: npm run build:production
       - name: Generate npm tarball
