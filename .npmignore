@@ -11,6 +11,14 @@ webpack.config.js
 .prettierrc.js
 .github
 Dockerfile
+Dockerfile.build
 docker-compose.yaml
 .vscode
 images
+pnpm-lock.yaml
+compass
+electron
+.prettierrc.json
+bootstrap.sh
+CHANGELOG
+.gitmodules

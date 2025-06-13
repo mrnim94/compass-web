@@ -26,7 +26,7 @@
     "@fastify/websocket": "^11.1.0",
     "fastify": "^5.3.3",
     "mongodb-connection-string-url": "^3.0.2",
-    "yargs": "^18.0.0"
+    "yargs": "^17.7.2"
   },
   "devDependencies": {
     "@mongodb-js/compass-app-stores": "^7.40.0",
