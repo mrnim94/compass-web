@@ -1,8 +1,7 @@
 {
   "name": "compass-web",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "bin": "app.js",
-  "source": "src/index.html",
   "scripts": {
     "prebuild": "rm -rf dist",
     "build": "webpack-compass",
@@ -64,7 +63,7 @@
       "@mongodb-js/mocha-config-compass": "link:./compass/configs/mocha-config-compass",
       "@mongodb-js/prettier-config-compass": "link:./compass/configs/prettier-config-compass",
       "@mongodb-js/tsconfig-compass": "link:./compass/configs/tsconfig-compass",
-      "@mongodb-js/webpack-config-compass": "https://github.com/haohanyang/compass/releases/download/v1.46.2/mongodb-js-webpack-config-compass-1.6.8.tgz",
+      "@mongodb-js/webpack-config-compass": "link:./compass/configs/webpack-config-compass",
       "@mongodb-js/atlas-service": "link:./compass/packages/atlas-service",
       "bson-transpilers": "link:./compass/packages/bson-transpilers",
       "mongodb-collection-model": "link:./compass/packages/collection-model",
