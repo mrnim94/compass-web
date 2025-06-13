@@ -37,20 +37,8 @@ jobs:
         run: |
           npm pack
           tar -xvzf compass-web-*.tgz
-      - name: Deploy to Netlify
-        if: ${{ github.ref == 'refs/heads/master' }}
-        uses: netlify/actions/cli@master
-        with:
-          args: deploy --dir=dist --prod
-        env:
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
       - name: Upload tarball
         uses: actions/upload-pages-artifact@v3
         with:
           name: compass-web
           path: package
-      - name: Deploy to GitHub Pages
-        if: ${{ github.ref == 'refs/heads/master' }}
-        id: deployment
-        uses: actions/deploy-pages@v4

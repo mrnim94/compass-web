@@ -6,15 +6,14 @@ import {
   css,
   Body,
   openToast,
-  SpinLoaderWithLabel
+  SpinLoaderWithLabel,
 } from '@mongodb-js/compass-components';
 import { useWorkspaceTabRouter } from './workspace-tab-router';
 import { type AllPreferences } from 'compass-preferences-model';
 
-
 interface ProjectParams {
-  projectId: string,
-  orgId: string
+  projectId: string;
+  orgId: string;
 }
 
 const sandboxContainerStyles = css({
@@ -42,7 +41,8 @@ resetGlobalCSS();
 
 const App = () => {
   const [currentTab, updateCurrentTab] = useWorkspaceTabRouter();
-  const [projectParams, setProjectParams] = React.useState<ProjectParams | null>(null);
+  const [projectParams, setProjectParams] =
+    React.useState<ProjectParams | null>(null);
 
   useEffect(() => {
     void fetch('/projectId')
@@ -52,18 +52,15 @@ const App = () => {
         if (!projectId) {
           throw new Error('failed to get projectId');
         }
-        const {
-          orgId
-        } = await fetch(`/cloud-mongodb-com/v2/${projectId}/params`).then(
-          (res) => {
-            return res.json();
-          }
-        );
+        const { orgId } = await fetch(
+          `/cloud-mongodb-com/v2/${projectId}/params`
+        ).then((res) => {
+          return res.json();
+        });
         setProjectParams({
           projectId,
-          orgId
+          orgId,
         });
-
       })
       .catch((err) => {
         openToast('failed-to-load-project-parameters', {
@@ -76,20 +73,27 @@ const App = () => {
 
   return (
     <Body as="div" className={sandboxContainerStyles}>
-      {projectParams ? <CompassWeb
-        projectId={projectParams.projectId}
-        orgId={projectParams.orgId}
-        onActiveWorkspaceTabChange={updateCurrentTab}
-        initialWorkspace={currentTab ?? undefined}
-        initialPreferences={initialPreferences}
-        onFailToLoadConnections={(error) => {
-          openToast('failed-to-load-connections', {
-            title: 'Failed to load connections',
-            description: error.message,
-            variant: 'warning',
-          });
-        }}
-      ></CompassWeb> : <SpinLoaderWithLabel className='compass-init-loader' progressText='Loading Compass' />}
+      {projectParams ? (
+        <CompassWeb
+          projectId={projectParams.projectId}
+          orgId={projectParams.orgId}
+          onActiveWorkspaceTabChange={updateCurrentTab}
+          initialWorkspace={currentTab ?? undefined}
+          initialPreferences={initialPreferences}
+          onFailToLoadConnections={(error) => {
+            openToast('failed-to-load-connections', {
+              title: 'Failed to load connections',
+              description: error.message,
+              variant: 'warning',
+            });
+          }}
+        ></CompassWeb>
+      ) : (
+        <SpinLoaderWithLabel
+          className="compass-init-loader"
+          progressText="Loading Compass"
+        />
+      )}
     </Body>
   );
 };
