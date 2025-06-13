@@ -20,19 +20,20 @@ jobs:
       - uses: pnpm/action-setup@v4
         name: Install pnpm
         with:
-          version: 8.15.4
+          version: 10.12.1
           run_install: false
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: pnpm
       - name: Bootstrap
         run: bash bootstrap.sh
       - run: pnpm i --frozen-lockfile
       - name: Build frontend
-        run: npm run build:production
+        run: pnpm run build:production
       - name: Generate npm tarball
         run: |
-          npm pack
+          pnpm pack
           tar -xvzf compass-web-*.tgz
       - name: Upload tarball
         uses: actions/upload-pages-artifact@v3

@@ -16,17 +16,19 @@ jobs:
       - uses: pnpm/action-setup@v4
         name: Install pnpm
         with:
-          version: 8.15.4
+          version: 10.12.1
           run_install: false
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
       - name: Check version
         id: check-version
         run: |
           version=$(node -e "console.log(require('./package.json').version);")
 
-          if npm view "compass-web@$version" version > /dev/null 2>&1; then
+          if pnpm view "compass-web@$version" version > /dev/null 2>&1; then
             echo "compass-web@$version already exists on npm"
             exit 1
           fi
@@ -42,10 +44,11 @@ jobs:
         run: bash bootstrap.sh
       - run: pnpm i --frozen-lockfile
       - name: Build compass-web
-        run: NODE_ENV=production npm run build
+        run: NODE_ENV=production pnpm run build
       - name: Publish compass-web
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: true
         run: |
           version=${{ steps.check-version.outputs.version }}
 
@@ -59,4 +62,4 @@ jobs:
             tag=''
           fi
 
-          npm publish ${tag} --provenance --access public
+          pnpm publish ${tag} --no-git-checks --access public

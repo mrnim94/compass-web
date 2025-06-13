@@ -12,7 +12,7 @@
   "license": "SSPL",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/haohanyang/compass-web"
+    "url": "git+https://github.com/haohanyang/compass-web.git"
   },
   "homepage": "https://github.com/haohanyang/compass-web#readme",
   "bugs": {
@@ -132,5 +132,5 @@
     "database",
     "GUI"
   ],
-  "packageManager": "pnpm@8.15.4"
+  "packageManager": "pnpm@10.12.1"
 }
