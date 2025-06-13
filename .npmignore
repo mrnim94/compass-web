@@ -22,3 +22,5 @@ electron
 bootstrap.sh
 CHANGELOG
 .gitmodules
+*.tgz
+package
