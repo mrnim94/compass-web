@@ -15,26 +15,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: pnpm/action-setup@v4
+        name: Install pnpm
+        with:
+          version: 8.15.4
+          run_install: false
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-      - run: npm ci
+      - name: Bootstrap
+        run: bash bootstrap.sh
+      - run: pnpm i --frozen-lockfile
       - name: Build frontend
-        run: NODE_ENV=production npm run build
-      - name: Deploy to Netlify
-        if: ${{ github.ref == 'refs/heads/master' }}
-        uses: netlify/actions/cli@master
-        with:
-          args: deploy --dir=dist --prod
-        env:
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-      - name: Upload page artifact
+        run: npm run build:production
+      - name: Generate npm tarball
+        run: |
+          npm pack
+          tar -xvzf compass-web-*.tgz
+      - name: Upload tarball
         uses: actions/upload-pages-artifact@v3
         with:
-          path: 'dist'
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          name: compass-web
+          path: package

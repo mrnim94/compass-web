@@ -1,0 +1,8 @@
+{
+  "name": "electron",
+  "main": "index.js",
+  "bin": {
+    "electron": "cli.js"
+  },
+  "version": "32.3.3"
+}

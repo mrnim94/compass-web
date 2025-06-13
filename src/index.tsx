@@ -1,85 +1,101 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom';
-import { resetGlobalCSS, css, Body } from '@mongodb-js/compass-components';
-import { CompassWeb } from '@haohanyang/compass-web';
-import { Logger } from './logger';
-import { Telemetry } from './telemetry';
+import { CompassWeb } from '@mongodb-js/compass-web';
 import {
-  AppConnectionStorage,
-  ApponnectionStorageProvider,
-} from './connection-storage';
+  resetGlobalCSS,
+  css,
+  Body,
+  openToast,
+  SpinLoaderWithLabel,
+} from '@mongodb-js/compass-components';
 import { useWorkspaceTabRouter } from './workspace-tab-router';
+import { type AllPreferences } from 'compass-preferences-model';
+
+interface ProjectParams {
+  projectId: string;
+  orgId: string;
+}
 
 const sandboxContainerStyles = css({
   width: '100%',
   height: '100%',
 });
 
+const initialPreferences: Partial<AllPreferences> = {
+  enableExportSchema: true,
+  enablePerformanceAdvisorBanner: false,
+  enableAtlasSearchIndexes: false,
+  maximumNumberOfActiveConnections: undefined,
+  enableCreatingNewConnections: true,
+  enableGlobalWrites: false,
+  enableRollingIndexes: false,
+  showDisabledConnections: true,
+  enableGenAIFeaturesAtlasProject: false,
+  enableGenAISampleDocumentPassingOnAtlasProject: false,
+  enableGenAIFeaturesAtlasOrg: false,
+  optInDataExplorerGenAIFeatures: false,
+  enableDataModeling: false,
+};
+
 resetGlobalCSS();
 
 const App = () => {
   const [currentTab, updateCurrentTab] = useWorkspaceTabRouter();
-  const sandboxConnectionStorage = new AppConnectionStorage();
-  const [defaultConnectionString, setDefaultConnectionString] = useState<string | undefined>(undefined);
+  const [projectParams, setProjectParams] =
+    React.useState<ProjectParams | null>(null);
 
   useEffect(() => {
-    fetch('/default-connection')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.uri) {
-          setDefaultConnectionString(data.uri);
+    void fetch('/projectId')
+      .then(async (res) => {
+        const projectId = await res.text();
+
+        if (!projectId) {
+          throw new Error('failed to get projectId');
         }
+        const { orgId } = await fetch(
+          `/cloud-mongodb-com/v2/${projectId}/params`
+        ).then((res) => {
+          return res.json();
+        });
+        setProjectParams({
+          projectId,
+          orgId,
+        });
+      })
+      .catch((err) => {
+        openToast('failed-to-load-project-parameters', {
+          title: 'Failed to load project parameters',
+          description: err.message,
+          variant: 'warning',
+        });
       });
   }, []);
 
-  // Inject default connection if none exist
-  useEffect(() => {
-    if (!defaultConnectionString) return;
-    sandboxConnectionStorage.loadAll().then((connections) => {
-      if (connections.length === 0) {
-        // Add a default connection
-        sandboxConnectionStorage.save({
-          connectionInfo: {
-            id: 'default-env-connection',
-            connectionOptions: {
-              connectionString: defaultConnectionString,
-            },
-            favorite: { name: 'Default from ENV' },
-            lastUsed: new Date().toISOString(),
-          },
-        });
-      }
-    });
-  }, [defaultConnectionString]);
-
   return (
-    <ApponnectionStorageProvider value={sandboxConnectionStorage}>
-      {/* @ts-ignore */}
-      <Body as="div" className={sandboxContainerStyles}>
+    <Body as="div" className={sandboxContainerStyles}>
+      {projectParams ? (
         <CompassWeb
-          orgId={''}
-          projectId={''}
+          projectId={projectParams.projectId}
+          orgId={projectParams.orgId}
           onActiveWorkspaceTabChange={updateCurrentTab}
           initialWorkspace={currentTab ?? undefined}
-          initialPreferences={{
-            enablePerformanceAdvisorBanner: false,
-            enableAtlasSearchIndexes: false,
-            maximumNumberOfActiveConnections: undefined,
-            atlasServiceBackendPreset: 'web-sandbox-atlas',
-            enableCreatingNewConnections: true,
-            enableGlobalWrites: false,
-            enableRollingIndexes: false,
+          initialPreferences={initialPreferences}
+          onFailToLoadConnections={(error) => {
+            openToast('failed-to-load-connections', {
+              title: 'Failed to load connections',
+              description: error.message,
+              variant: 'warning',
+            });
           }}
-          onTrack={Telemetry.track}
-          onDebug={Logger.log}
-          onLog={Logger.log}
-          // Pass the default connection string if available
-          defaultConnectionString={defaultConnectionString}
         ></CompassWeb>
-      </Body>
-    </ApponnectionStorageProvider>
+      ) : (
+        <SpinLoaderWithLabel
+          className="compass-init-loader"
+          progressText="Loading Compass"
+        />
+      )}
+    </Body>
   );
 };
 
-// @ts-ignore
-ReactDOM.render(<App></App>, document.querySelector('#sandbox-app'));
+ReactDOM.render(<App />, document.querySelector('#sandbox-app')!);
