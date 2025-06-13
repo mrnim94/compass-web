@@ -1,8 +1,17 @@
+'use strict';
+
 const path = require('path');
-const fastify = require('fastify')({ logger: true });
 const net = require('net');
 const tls = require('tls');
+const crypto = require('crypto');
+const fastify = require('fastify')({
+  logger: true,
+});
+const yargs = require('yargs');
+const { hideBin } = require('yargs/helpers');
+const { ConnectionString } = require('mongodb-connection-string-url');
 
+// WebSocket message utilities
 const SOCKET_ERROR_EVENT_LIST = ['error', 'close', 'timeout', 'parseError'];
 
 function encodeStringMessageWithTypeByte(message) {
@@ -34,6 +43,66 @@ function decodeMessageWithTypeByte(message) {
   }
 }
 
+const args = yargs(hideBin(process.argv))
+  .env('CW')
+  .options('mongo-uri', {
+    type: 'string',
+    description:
+      'MongoDB connection string, e.g. mongodb://localhost:27017. Multiple connections can be specified by separating them with whitespaces.',
+    demandOption: true,
+  })
+  .options('port', {
+    type: 'number',
+    description: 'Port to run the server on',
+    default: 8080,
+  })
+  .options('host', {
+    type: 'string',
+    description: 'Host to run the server on',
+    default: 'localhost',
+  })
+  .options('org-id', {
+    type: 'string',
+    description: 'Organization ID for the connection',
+    default: 'default-org-id',
+  })
+  .options('project-id', {
+    type: 'string',
+    description: 'Project ID for the connection',
+    default: 'default-project-id',
+  })
+  .options('cluster-id', {
+    type: 'string',
+    description: 'Cluster ID for the connection',
+    default: 'default-cluster-id',
+  })
+  .parse();
+
+let mongoURIStrings = args.mongoUri.trim().split(/\s+/);
+const mongoURIs = [];
+
+// Validate MongoDB connection strings
+let urlParsingError = '';
+mongoURIStrings.forEach((uri, index) => {
+  try {
+    const mongoUri = new ConnectionString(uri);
+
+    mongoURIs.push({
+      uri: mongoUri,
+      id: crypto.randomBytes(8).toString('hex'),
+    });
+  } catch (err) {
+    urlParsingError += `Connection string no.${index + 1} is invalid: ${
+      err.message
+    }\n`;
+  }
+});
+
+if (urlParsingError) {
+  console.error(urlParsingError);
+  process.exit(1);
+}
+
 let cleaningUp = false;
 
 fastify.register(require('@fastify/static'), {
@@ -42,49 +111,69 @@ fastify.register(require('@fastify/static'), {
 
 fastify.register(require('@fastify/websocket'));
 
-fastify.get('/nds/clusters/:projectId', function handler(request, reply) {
-  reply.send([]);
+fastify.get('/projectId', function handler(request, reply) {
+  reply.type('text/plain').send(args.projectId);
 });
+
+fastify.get(
+  '/cloud-mongodb-com/v2/:projectId/params',
+  function handler(request, reply) {
+    if (request.params.projectId == args.projectId) {
+      reply.send({
+        orgId: args.orgId,
+        projectId: args.projectId,
+      });
+    } else {
+      reply.status(404).send({
+        message: 'Project not found',
+      });
+    }
+  }
+);
 
 fastify.get(
   '/explorer/v1/groups/:projectId/clusters/connectionInfo',
   function handler(request, reply) {
-    reply.send([
-      {
-        id: 'unique-id',
+    reply.send(
+      mongoURIs.map(({ uri, id }) => ({
+        id: id,
         connectionOptions: {
-          connectionString: 'mongodb://localhost:27017',
+          connectionString: uri.href,
         },
         atlasMetadata: {
-          orgId: 'orgid',
-          projectId: 'projectid',
-          clusterUniqueId: 'uniqueid',
-          clusterName: 'mycluster',
-          clusterType: 'SHARDED',
+          orgId: args.orgId,
+          projectId: args.projectId,
+          clusterUniqueId: args.clusterId,
+          clusterName: uri.hosts[0],
+          clusterType: 'REPLICASET',
           clusterState: 'IDLE',
           metricsId: 'metricsid',
-          metricsType: 'cluster',
+          metricsType: 'replicaSet',
           supports: {
             globalWrites: false,
             rollingIndexes: false,
           },
         },
-      },
-    ]);
+      }))
+    );
   }
 );
 
+// Websocket proxy for MongoDB connections
 fastify.register(async function (fastify) {
   fastify.get(
     '/clusterConnection/:projectId',
     { websocket: true },
     (socket, req) => {
-      let mongoSocket;
+      if (req.params.projectId !== args.projectId) {
+        return;
+      }
 
       console.log(
         'new ws connection (total %s)',
         fastify.websocketServer.clients.size
       );
+      let mongoSocket;
 
       socket.on('message', async (message) => {
         if (mongoSocket) {
@@ -137,7 +226,6 @@ fastify.register(async function (fastify) {
       });
 
       socket.on('close', () => {
-        logger.log('ws closed');
         mongoSocket?.removeAllListeners();
         mongoSocket?.end();
       });
@@ -149,23 +237,31 @@ fastify.setNotFoundHandler(function (request, reply) {
   reply.sendFile('index.html');
 });
 
-fastify.listen({ port: 3000 }, (err) => {
+fastify.listen({ port: args.port, host: args.host }, (err, address) => {
   if (err) {
-    fastify.log.error(err);
+    console.error(err);
     process.exit(1);
   }
 
+  console.log(`Compass web server is listening on ${address}`);
+
+  // Clean up connections on shutdown
   for (const signal of ['SIGINT', 'SIGTERM']) {
     process.on(signal, () => {
       if (cleaningUp) {
-        return false;
+        return;
       }
 
       cleaningUp = true;
-
-      fastify.close(() => {
-        process.exit();
-      });
+      fastify.close().then(
+        () => {
+          process.exit(0);
+        },
+        (err) => {
+          console.error(err);
+          process.exit(1);
+        }
+      );
     });
   }
 });

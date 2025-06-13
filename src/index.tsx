@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { CompassWeb } from '@mongodb-js/compass-web';
 import {
@@ -6,9 +6,16 @@ import {
   css,
   Body,
   openToast,
+  SpinLoaderWithLabel
 } from '@mongodb-js/compass-components';
 import { useWorkspaceTabRouter } from './workspace-tab-router';
 import { type AllPreferences } from 'compass-preferences-model';
+
+
+interface ProjectParams {
+  projectId: string,
+  orgId: string
+}
 
 const sandboxContainerStyles = css({
   width: '100%',
@@ -35,12 +42,43 @@ resetGlobalCSS();
 
 const App = () => {
   const [currentTab, updateCurrentTab] = useWorkspaceTabRouter();
+  const [projectParams, setProjectParams] = React.useState<ProjectParams | null>(null);
+
+  useEffect(() => {
+    void fetch('/projectId')
+      .then(async (res) => {
+        const projectId = await res.text();
+
+        if (!projectId) {
+          throw new Error('failed to get projectId');
+        }
+        const {
+          orgId
+        } = await fetch(`/cloud-mongodb-com/v2/${projectId}/params`).then(
+          (res) => {
+            return res.json();
+          }
+        );
+        setProjectParams({
+          projectId,
+          orgId
+        });
+
+      })
+      .catch((err) => {
+        openToast('failed-to-load-project-parameters', {
+          title: 'Failed to load project parameters',
+          description: err.message,
+          variant: 'warning',
+        });
+      });
+  }, []);
 
   return (
     <Body as="div" className={sandboxContainerStyles}>
-      <CompassWeb
-        projectId="projectid"
-        orgId="orgid"
+      {projectParams ? <CompassWeb
+        projectId={projectParams.projectId}
+        orgId={projectParams.orgId}
         onActiveWorkspaceTabChange={updateCurrentTab}
         initialWorkspace={currentTab ?? undefined}
         initialPreferences={initialPreferences}
@@ -51,7 +89,7 @@ const App = () => {
             variant: 'warning',
           });
         }}
-      ></CompassWeb>
+      ></CompassWeb> : <SpinLoaderWithLabel className='compass-init-loader' progressText='Loading Compass' />}
     </Body>
   );
 };
