@@ -4,7 +4,8 @@
   "bin": "app.js",
   "scripts": {
     "prebuild": "rm -rf dist",
-    "build": "webpack-compass",
+    "build": "ELECTRON_OVERRIDE_DIST_PATH=/dev/null ELECTRON_SKIP_BINARY_DOWNLOAD=1 webpack-compass",
+    "build:production": "ELECTRON_OVERRIDE_DIST_PATH=/dev/null ELECTRON_SKIP_BINARY_DOWNLOAD=1 webpack-compass --mode production",
     "start": "node app.js"
   },
   "author": "Haohan Yang",

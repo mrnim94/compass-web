@@ -24,7 +24,6 @@ const MAX_COMPRESSION_FILE_SIZE = 10_000_000;
 module.exports = (env, args) => {
   let config = createWebConfig({
     ...args,
-    mode: process.env.NODE_ENV || 'development',
     entry: path.resolve(__dirname, 'src', 'index.tsx'),
   });
 

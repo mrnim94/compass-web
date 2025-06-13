@@ -3,7 +3,7 @@ name: Build
 on:
   workflow_dispatch:
   push:
-    branches: ["*"]
+    branches: ['*']
 
 permissions:
   contents: read
@@ -32,7 +32,7 @@ jobs:
       - name: Bootstrap
         run: bash bootstrap.sh
       - name: Build frontend
-        run: npm run build
+        run: npm run build:production
       - name: Deploy to Netlify
         if: ${{ github.ref == 'refs/heads/master' }}
         uses: netlify/actions/cli@master
