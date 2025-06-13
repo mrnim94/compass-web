@@ -104,7 +104,7 @@ if (urlParsingError) {
   process.exit(1);
 }
 
-let cleaningUp = false;
+let shuttingDown = false;
 
 fastify.register(require('@fastify/static'), {
   root: path.join(__dirname, 'dist'),
@@ -249,20 +249,33 @@ fastify.listen({ port: args.port, host: args.host }, (err, address) => {
   // Clean up connections on shutdown
   for (const signal of ['SIGINT', 'SIGTERM']) {
     process.on(signal, () => {
-      if (cleaningUp) {
+      if (shuttingDown) {
         return;
       }
 
-      cleaningUp = true;
-      fastify.close().then(
-        () => {
-          process.exit(0);
-        },
-        (err) => {
-          console.error(err);
-          process.exit(1);
-        }
-      );
+      shuttingDown = true;
+      console.log('Shutting down the server...');
+
+      // 20 seconds timeout to shutdown
+      const timeout = setTimeout(() => {
+        console.warn('Forcefully shutting down after 20 seconds.');
+        process.exit(1);
+      }, 20 * 1000);
+
+      let exitCode = 0;
+      fastify
+        .close()
+        .then(
+          () => {},
+          (err) => {
+            console.error(err);
+            exitCode = 1;
+          }
+        )
+        .finally(() => {
+          clearTimeout(timeout);
+          process.exit(exitCode);
+        });
     });
   }
 });
