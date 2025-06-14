@@ -5,8 +5,6 @@ on:
 
 jobs:
   publish-docker:
-    needs:
-      - publish-npm
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
