@@ -44,7 +44,7 @@ jobs:
         run: bash bootstrap.sh
       - run: pnpm i --frozen-lockfile
       - name: Build compass-web
-        run: NODE_ENV=production pnpm run build
+        run: NODE_ENV=production pnpm run build:production
       - name: Publish compass-web
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
