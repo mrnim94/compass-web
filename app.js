@@ -244,8 +244,6 @@ fastify.listen({ port: args.port, host: args.host }, (err, address) => {
     process.exit(1);
   }
 
-  console.log(`Compass web server is listening on ${address}`);
-
   // Clean up connections on shutdown
   for (const signal of ['SIGINT', 'SIGTERM']) {
     process.on(signal, () => {
