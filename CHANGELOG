@@ -1,3 +1,15 @@
+## 0.2.0 - 2025-06-15
+
+### Changed
+
+- Updated to [MongoDB Compass 1.46.2](https://github.com/mongodb-js/compass/releases/tag/v1.46.2)
+
+- Removed the dependency [@haohanyang/compass-web](http://npmjs.com/package/@haohanyang/compass-web)
+
+- MongoDB connection strings are configured only by arg `mongo-uri` or environment variables, not on UI.
+
+- Replaced Express.js with Fastify
+
 ## 0.1.2 - 2025-05-29
 
 ### Added
