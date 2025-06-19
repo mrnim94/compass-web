@@ -52,6 +52,10 @@ const args = yargs(hideBin(process.argv))
       'MongoDB connection string, e.g. mongodb://localhost:27017. Multiple connections can be specified by separating them with whitespaces.',
     demandOption: true,
   })
+  .option('version', {
+    type: 'boolean',
+    describe: 'Current compass-web version',
+  })
   .options('port', {
     type: 'number',
     description: 'Port to run the server on',
@@ -77,7 +81,20 @@ const args = yargs(hideBin(process.argv))
     description: 'Cluster ID for the connection',
     default: 'default-cluster-id',
   })
+  .option('basic-auth-username', {
+    type: 'string',
+    description: 'Username for Basic HTTP authentication scheme',
+  })
+  .option('basic-auth-password', {
+    type: 'string',
+    description: 'Password for Basic HTTP authentication scheme',
+  })
   .parse();
+
+if (args.version) {
+  console.log(require('./package.json').version);
+  process.exit(0);
+}
 
 let mongoURIStrings = args.mongoUri.trim().split(/\s+/);
 const mongoURIs = [];
@@ -104,6 +121,24 @@ if (urlParsingError) {
   process.exit(1);
 }
 
+// Validate basic auth settings
+let basicAuth = null;
+
+if (args.basicAuthUsername || args.basicAuthPassword) {
+  if (!args.basicAuthPassword) {
+    console.error('Basic auth password is not set');
+    process.exit(1);
+  } else if (!args.basicAuthUsername) {
+    console.error('Basic auth username is not set');
+    process.exit(1);
+  }
+
+  basicAuth = {
+    username: args.basicAuthUsername,
+    password: args.basicAuthPassword,
+  };
+}
+
 let shuttingDown = false;
 
 fastify.register(require('@fastify/static'), {
@@ -111,54 +146,6 @@ fastify.register(require('@fastify/static'), {
 });
 
 fastify.register(require('@fastify/websocket'));
-
-fastify.get('/projectId', function handler(request, reply) {
-  reply.type('text/plain').send(args.projectId);
-});
-
-fastify.get(
-  '/cloud-mongodb-com/v2/:projectId/params',
-  function handler(request, reply) {
-    if (request.params.projectId == args.projectId) {
-      reply.send({
-        orgId: args.orgId,
-        projectId: args.projectId,
-      });
-    } else {
-      reply.status(404).send({
-        message: 'Project not found',
-      });
-    }
-  }
-);
-
-fastify.get(
-  '/explorer/v1/groups/:projectId/clusters/connectionInfo',
-  function handler(request, reply) {
-    reply.send(
-      mongoURIs.map(({ uri, id }) => ({
-        id: id,
-        connectionOptions: {
-          connectionString: uri.href,
-        },
-        atlasMetadata: {
-          orgId: args.orgId,
-          projectId: args.projectId,
-          clusterUniqueId: args.clusterId,
-          clusterName: uri.hosts[0],
-          clusterType: 'REPLICASET',
-          clusterState: 'IDLE',
-          metricsId: 'metricsid',
-          metricsType: 'replicaSet',
-          supports: {
-            globalWrites: false,
-            rollingIndexes: false,
-          },
-        },
-      }))
-    );
-  }
-);
 
 // Websocket proxy for MongoDB connections
 fastify.register(async function (fastify) {
@@ -234,8 +221,75 @@ fastify.register(async function (fastify) {
   );
 });
 
-fastify.setNotFoundHandler(function (request, reply) {
-  reply.sendFile('index.html');
+if (basicAuth) {
+  fastify.register(require('@fastify/basic-auth'), {
+    validate: (username, password, _req, _reply, done) => {
+      if (username === basicAuth.username && password === basicAuth.password) {
+        done();
+      } else {
+        done(new Error('Authentication error'));
+      }
+    },
+    authenticate: true,
+  });
+}
+
+fastify.after(() => {
+  if (basicAuth) {
+    fastify.addHook('onRequest', fastify.basicAuth);
+  }
+
+  fastify.get('/projectId', function handler(request, reply) {
+    reply.type('text/plain').send(args.projectId);
+  });
+
+  fastify.get(
+    '/cloud-mongodb-com/v2/:projectId/params',
+    function handler(request, reply) {
+      if (request.params.projectId == args.projectId) {
+        reply.send({
+          orgId: args.orgId,
+          projectId: args.projectId,
+        });
+      } else {
+        reply.status(404).send({
+          message: 'Project not found',
+        });
+      }
+    }
+  );
+
+  fastify.get(
+    '/explorer/v1/groups/:projectId/clusters/connectionInfo',
+    function handler(request, reply) {
+      reply.send(
+        mongoURIs.map(({ uri, id }) => ({
+          id: id,
+          connectionOptions: {
+            connectionString: uri.href,
+          },
+          atlasMetadata: {
+            orgId: args.orgId,
+            projectId: args.projectId,
+            clusterUniqueId: args.clusterId,
+            clusterName: uri.hosts[0],
+            clusterType: 'REPLICASET',
+            clusterState: 'IDLE',
+            metricsId: 'metricsid',
+            metricsType: 'replicaSet',
+            supports: {
+              globalWrites: false,
+              rollingIndexes: false,
+            },
+          },
+        }))
+      );
+    }
+  );
+
+  fastify.setNotFoundHandler(function (request, reply) {
+    reply.sendFile('index.html');
+  });
 });
 
 fastify.listen({ port: args.port, host: args.host }, (err, address) => {
