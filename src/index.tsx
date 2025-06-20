@@ -28,7 +28,7 @@ const initialPreferences: Partial<AllPreferences> = {
   enableAtlasSearchIndexes: false,
   enableGenAIFeatures: false,
   maximumNumberOfActiveConnections: undefined,
-  enableCreatingNewConnections: true,
+  enableCreatingNewConnections: false,
   enableGlobalWrites: false,
   enableRollingIndexes: false,
   showDisabledConnections: true,
