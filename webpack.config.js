@@ -1,5 +1,5 @@
 const path = require('path');
-const { merge } = require('@mongodb-js/webpack-config-compass');
+const { webpack, merge } = require('@mongodb-js/webpack-config-compass');
 const compassWebConfig = require('./compass/packages/compass-web/webpack.config');
 const CopyPlugin = require('copy-webpack-plugin');
 
@@ -16,6 +16,10 @@ module.exports = (env, args) => {
     plugins: [
       new CopyPlugin({
         patterns: ['src/index.html', 'src/favicon.svg'],
+      }),
+      new webpack.DefinePlugin({
+        'process.env.ENABLE_DEBUG': args.mode != 'production',
+        'process.env.ENABLE_INFO': args.mode != 'production',
       }),
     ],
     resolve: {

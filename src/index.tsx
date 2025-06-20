@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom';
-import { CompassWeb } from '@mongodb-js/compass-web';
+import { CompassWeb } from './components/compass-web';
 import {
   resetGlobalCSS,
   css,
@@ -8,8 +8,9 @@ import {
   openToast,
   SpinLoaderWithLabel,
 } from '@mongodb-js/compass-components';
-import { useWorkspaceTabRouter } from './workspace-tab-router';
+import { useWorkspaceTabRouter } from '../compass/packages/compass-web/sandbox/sandbox-workspace-tab-router';
 import { type AllPreferences } from 'compass-preferences-model';
+import { compassWebLogger } from './components/logger';
 
 interface ProjectParams {
   projectId: string;
@@ -25,8 +26,9 @@ const initialPreferences: Partial<AllPreferences> = {
   enableExportSchema: true,
   enablePerformanceAdvisorBanner: false,
   enableAtlasSearchIndexes: false,
+  enableGenAIFeatures: false,
   maximumNumberOfActiveConnections: undefined,
-  enableCreatingNewConnections: true,
+  enableCreatingNewConnections: false,
   enableGlobalWrites: false,
   enableRollingIndexes: false,
   showDisabledConnections: true,
@@ -80,6 +82,8 @@ const App = () => {
           onActiveWorkspaceTabChange={updateCurrentTab}
           initialWorkspace={currentTab ?? undefined}
           initialPreferences={initialPreferences}
+          onLog={compassWebLogger.log}
+          onDebug={compassWebLogger.debug}
           onFailToLoadConnections={(error) => {
             openToast('failed-to-load-connections', {
               title: 'Failed to load connections',

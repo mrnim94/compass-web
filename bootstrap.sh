@@ -14,4 +14,5 @@ node_modules/.bin/lerna run bootstrap --stream \
     --ignore @mongodb-js/testing-library-compass \
     --ignore compass-e2e-tests \
     --ignore @mongodb-js/compass-smoke-tests \
-    --ignore @mongodb-js/compass-test-server
+    --ignore @mongodb-js/compass-test-server \
+    --ignore @mongodb-js/compass-web

@@ -95,15 +95,90 @@ importers:
         specifier: ^17.7.2
         version: 17.7.2
     devDependencies:
+      '@mongodb-js/atlas-service':
+        specifier: link:compass/packages/atlas-service
+        version: link:compass/packages/atlas-service
+      '@mongodb-js/compass-aggregations':
+        specifier: link:compass/packages/compass-aggregations
+        version: link:compass/packages/compass-aggregations
+      '@mongodb-js/compass-app-stores':
+        specifier: link:compass/packages/compass-app-stores
+        version: link:compass/packages/compass-app-stores
+      '@mongodb-js/compass-collection':
+        specifier: link:compass/packages/compass-collection
+        version: link:compass/packages/compass-collection
       '@mongodb-js/compass-components':
         specifier: link:compass/packages/compass-components
         version: link:compass/packages/compass-components
-      '@mongodb-js/compass-web':
-        specifier: link:compass/packages/compass-web
-        version: link:compass/packages/compass-web
+      '@mongodb-js/compass-connections':
+        specifier: link:compass/packages/compass-connections
+        version: link:compass/packages/compass-connections
+      '@mongodb-js/compass-crud':
+        specifier: link:compass/packages/compass-crud
+        version: link:compass/packages/compass-crud
+      '@mongodb-js/compass-data-modeling':
+        specifier: link:compass/packages/compass-data-modeling
+        version: link:compass/packages/compass-data-modeling
+      '@mongodb-js/compass-databases-collections':
+        specifier: link:compass/packages/databases-collections
+        version: link:compass/packages/databases-collections
+      '@mongodb-js/compass-explain-plan':
+        specifier: link:compass/packages/compass-explain-plan
+        version: link:compass/packages/compass-explain-plan
+      '@mongodb-js/compass-export-to-language':
+        specifier: link:compass/packages/compass-export-to-language
+        version: link:compass/packages/compass-export-to-language
+      '@mongodb-js/compass-field-store':
+        specifier: link:compass/packages/compass-field-store
+        version: link:compass/packages/compass-field-store
+      '@mongodb-js/compass-generative-ai':
+        specifier: link:compass/packages/compass-generative-ai
+        version: link:compass/packages/compass-generative-ai
+      '@mongodb-js/compass-global-writes':
+        specifier: link:compass/packages/compass-global-writes
+        version: link:compass/packages/compass-global-writes
+      '@mongodb-js/compass-indexes':
+        specifier: link:compass/packages/compass-indexes
+        version: link:compass/packages/compass-indexes
+      '@mongodb-js/compass-logging':
+        specifier: link:compass/packages/compass-logging
+        version: link:compass/packages/compass-logging
+      '@mongodb-js/compass-query-bar':
+        specifier: link:compass/packages/compass-query-bar
+        version: link:compass/packages/compass-query-bar
+      '@mongodb-js/compass-schema':
+        specifier: link:compass/packages/compass-schema
+        version: link:compass/packages/compass-schema
+      '@mongodb-js/compass-schema-validation':
+        specifier: link:compass/packages/compass-schema-validation
+        version: link:compass/packages/compass-schema-validation
+      '@mongodb-js/compass-settings':
+        specifier: link:compass/packages/compass-settings
+        version: link:compass/packages/compass-settings
+      '@mongodb-js/compass-sidebar':
+        specifier: link:compass/packages/compass-sidebar
+        version: link:compass/packages/compass-sidebar
+      '@mongodb-js/compass-telemetry':
+        specifier: link:compass/packages/compass-telemetry
+        version: link:compass/packages/compass-telemetry
+      '@mongodb-js/compass-welcome':
+        specifier: link:compass/packages/compass-welcome
+        version: link:compass/packages/compass-welcome
       '@mongodb-js/compass-workspaces':
         specifier: link:compass/packages/compass-workspaces
         version: link:compass/packages/compass-workspaces
+      '@mongodb-js/connection-storage':
+        specifier: link:compass/packages/connection-storage
+        version: link:compass/packages/connection-storage
+      '@mongodb-js/eslint-config-compass':
+        specifier: link:compass/configs/eslint-config-compass
+        version: link:compass/configs/eslint-config-compass
+      '@mongodb-js/mocha-config-compass':
+        specifier: link:compass/configs/mocha-config-compass
+        version: link:compass/configs/mocha-config-compass
+      '@mongodb-js/prettier-config-compass':
+        specifier: link:compass/configs/prettier-config-compass
+        version: link:compass/configs/prettier-config-compass
       '@mongodb-js/webpack-config-compass':
         specifier: link:compass/configs/webpack-config-compass
         version: link:compass/configs/webpack-config-compass
@@ -113,9 +188,15 @@ importers:
       '@types/react-dom':
         specifier: ^17.0.2
         version: 17.0.26(@types/react@17.0.87)
+      compass-preferences-model:
+        specifier: link:compass/packages/compass-preferences-model
+        version: link:compass/packages/compass-preferences-model
       copy-webpack-plugin:
         specifier: ^13.0.0
         version: 13.0.0(webpack@5.99.9)
+      hadron-app-registry:
+        specifier: link:compass/packages/hadron-app-registry
+        version: link:compass/packages/hadron-app-registry
 
 packages:
 
