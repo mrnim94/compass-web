@@ -37,6 +37,7 @@ const initialPreferences: Partial<AllPreferences> = {
   enableGenAIFeaturesAtlasOrg: false,
   optInDataExplorerGenAIFeatures: false,
   enableDataModeling: false,
+  trackUsageStatistics: false,
 };
 
 resetGlobalCSS();
