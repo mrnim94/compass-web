@@ -2,10 +2,12 @@ export const compassWebLogger = {
     log: (level: string, component: string, ...args: any[]) => {
         switch (level) {
             case "debug":
-                console.debug(component, args);
+                if (process.env.ENABLE_DEBUG)
+                    console.debug(component, args);
                 break;
             case "info":
-                console.info(component, args);
+                if (process.env.ENABLE_INFO)
+                    console.info(component, args);
                 break;
             case "warn":
                 console.warn(component, args);
@@ -21,6 +23,7 @@ export const compassWebLogger = {
         }
     },
     debug: (...args: any[]) => {
-        console.debug(args)
+        if (process.env.ENABLE_DEBUG)
+            console.debug(args)
     }
 };
