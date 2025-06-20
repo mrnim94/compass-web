@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import AppRegistry, {
   AppRegistryProvider,
   GlobalAppRegistryProvider,
@@ -10,6 +10,7 @@ import type { OpenWorkspaceOptions } from '@mongodb-js/compass-workspaces';
 import WorkspacesPlugin, {
   WorkspacesProvider,
 } from '@mongodb-js/compass-workspaces';
+import { CompassSettingsPlugin } from '@mongodb-js/compass-settings';
 import {
   DatabasesWorkspaceTab,
   CollectionsWorkspaceTab,
@@ -59,7 +60,7 @@ import type {
 import { useCompassWebLoggerAndTelemetry } from '../../compass/packages/compass-web/src/logger-and-telemetry';
 import { type TelemetryServiceOptions } from '@mongodb-js/compass-telemetry';
 import { WebWorkspaceTab as WelcomeWorkspaceTab } from '@mongodb-js/compass-welcome';
-import { useCompassWebPreferences } from '../../compass/packages/compass-web/src/preferences';
+import { useCompassWebPreferences } from './preferences';
 import { WorkspaceTab as DataModelingWorkspace } from '@mongodb-js/compass-data-modeling';
 import { DataModelStorageServiceProviderInMemory } from '@mongodb-js/compass-data-modeling/web';
 
@@ -87,80 +88,21 @@ type CompassWorkspaceProps = Pick<
   >;
 
 type CompassWebProps = {
-  /**
-   * App name to be passed with the connection string when connection to a
-   * cluster (default: "Compass Web")
-   */
   appName?: string;
-
-  /**
-   * Atlas Cloud organization id
-   */
   orgId: string;
-  /**
-   * Atlas Cloud project id (sometimes called group id)
-   */
   projectId: string;
-
-  /**
-   * Whether or not darkMode should be active for the app
-   */
-  darkMode?: boolean;
-
-  /**
-   * Optional. If passed, compass-web will try to find connection info with that
-   * id in connection storage and pass it as autoconnect info to the
-   * compass-connections
-   */
   initialAutoconnectId?: string;
-  /**
-   * Optional. If passed, compass-web will open provided workspace right away.
-   * If workspace requires active connection, the connectionId from the
-   * workspace will be used for the autoconnect info getter. In that case
-   * connectionId from the workspace takes precedence over
-   * `initialAutoconnectId`
-   */
   initialWorkspace?: OpenWorkspaceOptions;
-  /**
-   * Callback prop called when current active workspace changes. Can be used to
-   * communicate current workspace back to the parent component for example to
-   * sync router with the current active workspace
-   */
   onActiveWorkspaceTabChange: React.ComponentProps<
     typeof WorkspacesPlugin
   >['onActiveWorkspaceTabChange'];
-
-  /**
-   * Set of initial preferences to override default values
-   */
   initialPreferences?: Partial<AllPreferences>;
-
-  /**
-   * Callback prop called every time any code inside Compass logs something
-   */
   onLog?: LogFunction;
-  /**
-   * Callback prop called every time any code inside Compass prints a debug
-   * statement
-   */
   onDebug?: DebugFunction;
-  /**
-   * Callback prop called for every track event inside Compass
-   */
   onTrack?: TrackFunction;
-
-  /**
-   * Callback prop that will be called with atlas metadata for a certain cluster
-   * when the action is selected from the sidebar actions. Should be used to
-   * show the Atlas Cloud "Connect" modal
-   */
   onOpenConnectViaModal?: (
     atlasMetadata: ConnectionInfo['atlasMetadata']
   ) => void;
-
-  /**
-   * Callback prop called when connections fail to load
-   */
   onFailToLoadConnections: (err: Error) => void;
 };
 
@@ -206,7 +148,7 @@ function CompassWorkspace({
               return (
                 <CompassSidebarPlugin
                   onOpenConnectViaModal={onOpenConnectViaModal}
-                  isCompassWeb={true}
+                  isCompassWeb={false}
                 ></CompassSidebarPlugin>
               );
             }}
@@ -257,7 +199,6 @@ const CompassWeb = ({
   appName,
   orgId,
   projectId,
-  darkMode,
   initialAutoconnectId,
   initialWorkspace,
   onActiveWorkspaceTabChange,
@@ -294,30 +235,34 @@ const CompassWeb = ({
     preferences: preferencesAccess.current,
   });
 
+  const [darkMode, setDarkMode] = useState(false);
+
   useEffect(() => {
-    // TODO(COMPASS-9353): Provide a standard way of updating Compass' preferences from web.
-    // Avoid duplicating this pattern until we address this ticket.
-    const updateEarlyIndexesPreferences = async () => {
-      await preferencesAccess.current.savePreferences({
-        enableIndexesGuidanceExp: initialPreferences?.enableIndexesGuidanceExp,
-        showIndexesGuidanceVariant:
-          initialPreferences?.showIndexesGuidanceVariant,
+    preferencesAccess.current
+      .getConfigurableUserPreferences()
+      .then((preferences) => {
+        const theme = preferences['theme'];
+        if (theme == 'DARK') {
+          setDarkMode(true);
+        } else if (theme == 'LIGHT') {
+          setDarkMode(false);
+        }
       });
-    };
-    void updateEarlyIndexesPreferences();
-  }, [
-    initialPreferences?.enableIndexesGuidanceExp,
-    initialPreferences?.showIndexesGuidanceVariant,
-    preferencesAccess,
-  ]);
+  }, [preferencesAccess]);
+
+  preferencesAccess.current.onPreferenceValueChanged('theme', (theme) => {
+    if (theme == 'DARK') {
+      setDarkMode(true);
+    } else if (theme == 'LIGHT') {
+      setDarkMode(false);
+    }
+  });
 
   return (
     <GlobalAppRegistryProvider value={appRegistry.current}>
       <AppRegistryProvider scopeName="Compass Web Root">
         <CompassComponentsProvider
           darkMode={darkMode}
-          // Making sure that compass-web modals and tooltips are definitely not
-          // hidden by Cloud UI sidebar and page header
           stackedElementsZIndex={10_000}
           onNextGuideGue={(cue) => {
             onTrackRef.current?.('Guide Cue Dismissed', {
@@ -407,6 +352,7 @@ const CompassWeb = ({
                                 onOpenConnectViaModal={onOpenConnectViaModal}
                               ></CompassWorkspace>
                             </WithConnectionsStore>
+                            <CompassSettingsPlugin></CompassSettingsPlugin>
                           </FieldStorePlugin>
                           <CompassGenerativeAIPlugin projectId={projectId} />
                         </CompassInstanceStorePlugin>

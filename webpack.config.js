@@ -19,6 +19,7 @@ module.exports = (env, args) => {
       }),
       new webpack.DefinePlugin({
         'process.env.ENABLE_DEBUG': args.mode != 'production',
+        'process.env.ENABLE_INFO': args.mode != 'production',
       }),
     ],
     resolve: {

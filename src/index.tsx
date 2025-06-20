@@ -10,6 +10,7 @@ import {
 } from '@mongodb-js/compass-components';
 import { useWorkspaceTabRouter } from '../compass/packages/compass-web/sandbox/sandbox-workspace-tab-router';
 import { type AllPreferences } from 'compass-preferences-model';
+import { compassWebLogger } from './components/logger';
 
 interface ProjectParams {
   projectId: string;
@@ -25,6 +26,7 @@ const initialPreferences: Partial<AllPreferences> = {
   enableExportSchema: true,
   enablePerformanceAdvisorBanner: false,
   enableAtlasSearchIndexes: false,
+  enableGenAIFeatures: false,
   maximumNumberOfActiveConnections: undefined,
   enableCreatingNewConnections: true,
   enableGlobalWrites: false,
@@ -80,6 +82,8 @@ const App = () => {
           onActiveWorkspaceTabChange={updateCurrentTab}
           initialWorkspace={currentTab ?? undefined}
           initialPreferences={initialPreferences}
+          onLog={compassWebLogger.log}
+          onDebug={compassWebLogger.debug}
           onFailToLoadConnections={(error) => {
             openToast('failed-to-load-connections', {
               title: 'Failed to load connections',
