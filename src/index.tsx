@@ -15,6 +15,7 @@ import { compassWebLogger } from './components/logger';
 interface ProjectParams {
   projectId: string;
   orgId: string;
+  appName: string;
 }
 
 const sandboxContainerStyles = css({
@@ -55,7 +56,7 @@ const App = () => {
         if (!projectId) {
           throw new Error('failed to get projectId');
         }
-        const { orgId } = await fetch(
+        const { orgId, appName } = await fetch(
           `/cloud-mongodb-com/v2/${projectId}/params`
         ).then((res) => {
           return res.json();
@@ -63,6 +64,7 @@ const App = () => {
         setProjectParams({
           projectId,
           orgId,
+          appName,
         });
       })
       .catch((err) => {
@@ -80,6 +82,7 @@ const App = () => {
         <CompassWeb
           projectId={projectParams.projectId}
           orgId={projectParams.orgId}
+          appName={projectParams.appName}
           onActiveWorkspaceTabChange={updateCurrentTab}
           initialWorkspace={currentTab ?? undefined}
           initialPreferences={initialPreferences}
