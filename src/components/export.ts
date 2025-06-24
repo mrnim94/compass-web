@@ -22,6 +22,7 @@ import {
 import type { ExportJSONFormat } from '../../compass/packages/compass-import-export/src/export/export-json';
 import type { ExportThunkAction } from '../../compass/packages/compass-import-export/src/stores/export-store';
 
+
 export type FieldsToExport = {
     [fieldId: string]: {
         path: SchemaPath;
@@ -359,6 +360,7 @@ export const runExport = ({
         { connections, preferences, track, logger: { log, mongoLogId } }
     ) => {
         const startTime = Date.now();
+        const userPreferences = await preferences.getConfigurableUserPreferences();
 
         const {
             export: {
@@ -445,29 +447,30 @@ export const runExport = ({
                 throw new Error('ConnectionId not provided');
             }
 
+            const baseExportOptions = { connectionId, ns: namespace, preferences: userPreferences }
 
             if (aggregation) {
                 if (fileType === 'csv') {
                     await fetch('/export-csv', {
                         method: 'POST',
-                        body: JSON.stringify({ aggregation, connectionId })
+                        body: JSON.stringify({ ...baseExportOptions, aggregation })
                     })
                 } else {
                     await fetch('/export-json', {
                         method: 'POST',
-                        body: JSON.stringify({ aggregation, connectionId })
+                        body: JSON.stringify({ ...baseExportOptions, aggregation, jsonFormatVariant })
                     })
                 }
             } else {
                 if (fileType === 'csv') {
                     await fetch('/export-csv', {
                         method: 'POST',
-                        body: JSON.stringify({ query, connectionId })
+                        body: JSON.stringify({ ...baseExportOptions, query })
                     })
                 } else {
                     await fetch('/export-json', {
                         method: 'POST',
-                        body: JSON.stringify({ query, connectionId })
+                        body: JSON.stringify({ ...baseExportOptions, query, jsonFormatVariant })
                     })
                 }
             }
