@@ -2,7 +2,14 @@
   "extends": "./compass/configs/tsconfig-compass/tsconfig.react.json", //"@mongodb-js/tsconfig-compass/tsconfig.react.json",
   "compilerOptions": {
     "jsx": "react",
-    "outDir": "dist"
+    "outDir": "dist",
+    "paths": {
+      "redux": ["./compass/node_modules/redux"],
+      "react-redux": ["./compass/node_modules/redux"],
+      "lodash": ["./compass/node_modules/@types/lodash"],
+      "react": ["./compass/node_modules/@types/react"],
+      "react-dom": ["./compass/node_modules/@types/react-dom"]
+    }
   },
   "include": ["src/**/*", "compass/packages/**/*", "compass/configs/**/*"]
 }
