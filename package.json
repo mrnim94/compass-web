@@ -63,6 +63,7 @@
     "@mongodb-js/webpack-config-compass": "^1.6.8",
     "compass-preferences-model": "^2.36.0",
     "copy-webpack-plugin": "^13.0.0",
+    "dotenv": "^16.5.0",
     "hadron-app-registry": "^9.4.8",
     "readable-stream": "^4.7.0"
   },
