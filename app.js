@@ -11,6 +11,7 @@ const fastify = require('fastify')({
 const yargs = require('yargs');
 const { hideBin } = require('yargs/helpers');
 const { ConnectionString } = require('mongodb-connection-string-url');
+const { MongoClient } = require('mongodb');
 
 // WebSocket message utilities
 const SOCKET_ERROR_EVENT_LIST = ['error', 'close', 'timeout', 'parseError'];
@@ -96,6 +97,11 @@ const args = yargs(hideBin(process.argv))
 let mongoURIStrings = args.mongoUri.trim().split(/\s+/);
 const mongoURIs = [];
 
+/**
+ * @type {Object.<string, MongoClient>}
+ */
+const mongoClients = {};
+
 // Validate MongoDB connection strings
 let urlParsingError = '';
 mongoURIStrings.forEach((uri, index) => {
@@ -116,6 +122,10 @@ mongoURIStrings.forEach((uri, index) => {
 if (urlParsingError) {
   console.error(urlParsingError);
   process.exit(1);
+}
+
+for (const { uri, id } of mongoURIs) {
+  mongoClients[id] = new MongoClient(uri.href);
 }
 
 // Validate basic auth settings
@@ -320,20 +330,14 @@ fastify.listen({ port: args.port, host: args.host }, (err, address) => {
         process.exit(1);
       }, 20 * 1000);
 
-      let exitCode = 0;
-      fastify
-        .close()
-        .then(
-          () => {},
-          (err) => {
-            console.error(err);
-            exitCode = 1;
-          }
-        )
-        .finally(() => {
-          clearTimeout(timeout);
-          process.exit(exitCode);
-        });
+      Promise.allSettled([
+        fastify.close(),
+        // Close all MongoDB clients
+        Object.entries(mongoClients).map(([_, client]) => client.close()),
+      ]).finally(() => {
+        clearTimeout(timeout);
+        process.exit();
+      });
     });
   }
 });
