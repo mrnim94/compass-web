@@ -74,7 +74,7 @@ module.exports = (env, args) => {
         'fs/promises': localPolyfill('fs/promises'),
         'stream/promises': localPolyfill('stream/promises'),
         fs: localPolyfill('fs'),
-        stream: localPolyfill('stream'),
+        stream: resolveFromCompass('readable-stream'),
       },
     },
     performance: {
