@@ -6,7 +6,8 @@
     "prebuild": "rm -rf dist",
     "build": "ELECTRON_OVERRIDE_DIST_PATH=/dev/null ELECTRON_SKIP_BINARY_DOWNLOAD=1 webpack-compass",
     "build:production": "ELECTRON_OVERRIDE_DIST_PATH=/dev/null ELECTRON_SKIP_BINARY_DOWNLOAD=1 webpack-compass --mode production",
-    "start": "node app.js"
+    "start": "node app.js",
+    "test": "jest"
   },
   "author": "Haohan Yang",
   "license": "SSPL",
@@ -31,6 +32,7 @@
     "yargs": "^17.7.2"
   },
   "devDependencies": {
+    "@jest/globals": "^30.0.3",
     "@mongodb-js/atlas-service": "^0.39.0",
     "@mongodb-js/compass-aggregations": "^9.56.0",
     "@mongodb-js/compass-app-stores": "^7.40.0",
@@ -65,7 +67,7 @@
     "copy-webpack-plugin": "^13.0.0",
     "dotenv": "^16.5.0",
     "hadron-app-registry": "^9.4.8",
-    "readable-stream": "^4.7.0"
+    "jest": "^30.0.3"
   },
   "pnpm": {
     "overrides": {
