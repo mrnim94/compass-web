@@ -121,31 +121,48 @@ export const runExport = ({
 
             const baseExportOptions = { connectionId, ns: namespace, preferences: userPreferences }
 
+            let response;
             if (aggregation) {
                 if (fileType === 'csv') {
-                    await fetch('/export-csv', {
+                    response = await fetch('/export-csv', {
                         method: 'POST',
-                        body: JSON.stringify({ ...baseExportOptions, aggregation })
+                        body: JSON.stringify({ ...baseExportOptions, aggregation }),
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
                     })
                 } else {
-                    await fetch('/export-json', {
+                    response = (await fetch('/export-json', {
                         method: 'POST',
-                        body: JSON.stringify({ ...baseExportOptions, aggregation, jsonFormatVariant })
-                    })
+                        body: JSON.stringify({ ...baseExportOptions, aggregation, jsonFormatVariant }),
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    }))
                 }
             } else {
                 if (fileType === 'csv') {
-                    await fetch('/export-csv', {
+                    response = await fetch('/export-csv', {
                         method: 'POST',
-                        body: JSON.stringify({ ...baseExportOptions, query })
+                        body: JSON.stringify({ ...baseExportOptions, query }),
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
                     })
                 } else {
-                    await fetch('/export-json', {
+                    response = await fetch('/export-json', {
                         method: 'POST',
-                        body: JSON.stringify({ ...baseExportOptions, query, jsonFormatVariant })
+                        body: JSON.stringify({ ...baseExportOptions, query, jsonFormatVariant }),
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
                     })
                 }
             }
+
+            const exportId = await response.text();
+
+            window.open(`/export/${exportId}`, '_blank')
 
             // log.info(mongoLogId(1_001_000_186), 'Export', 'Finished export', {
             //     namespace,

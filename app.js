@@ -18,6 +18,14 @@ const {
   encodeBinaryMessageWithTypeByte,
   SOCKET_ERROR_EVENT_LIST,
 } = require('./lib/utils');
+const {
+  exportJSONFromAggregation,
+  exportJSONFromQuery,
+  exportCSVFromAggregation,
+  exportCSVFromQuery,
+} = require('./lib/export');
+const NodeCache = require('node-cache');
+
 const args = yargs(hideBin(process.argv))
   .env('CW')
   .options('mongo-uri', {
@@ -97,10 +105,6 @@ if (urlParsingError) {
   process.exit(1);
 }
 
-for (const { uri, id } of mongoURIs) {
-  mongoClients[id] = new MongoClient(uri.href);
-}
-
 // Validate basic auth settings
 let basicAuth = null;
 
@@ -119,7 +123,13 @@ if (args.basicAuthUsername || args.basicAuthPassword) {
   };
 }
 
+for (const { uri, id } of mongoURIs) {
+  mongoClients[id] = new MongoClient(uri.href);
+}
+
 let shuttingDown = false;
+
+const exportIds = new NodeCache({ stdTTL: 3600 });
 
 fastify.register(require('@fastify/static'), {
   root: path.join(__dirname, 'dist'),
@@ -128,7 +138,7 @@ fastify.register(require('@fastify/static'), {
 fastify.register(require('@fastify/websocket'));
 
 // Websocket proxy for MongoDB connections
-fastify.register(async function (fastify) {
+fastify.register(async (fastify) => {
   fastify.get(
     '/clusterConnection/:projectId',
     { websocket: true },
@@ -219,30 +229,27 @@ fastify.after(() => {
     fastify.addHook('onRequest', fastify.basicAuth);
   }
 
-  fastify.get('/projectId', function handler(request, reply) {
+  fastify.get('/projectId', (request, reply) => {
     reply.type('text/plain').send(args.projectId);
   });
 
-  fastify.get(
-    '/cloud-mongodb-com/v2/:projectId/params',
-    function handler(request, reply) {
-      if (request.params.projectId == args.projectId) {
-        reply.send({
-          orgId: args.orgId,
-          projectId: args.projectId,
-          appName: args.appName,
-        });
-      } else {
-        reply.status(404).send({
-          message: 'Project not found',
-        });
-      }
+  fastify.get('/cloud-mongodb-com/v2/:projectId/params', (request, reply) => {
+    if (request.params.projectId == args.projectId) {
+      reply.send({
+        orgId: args.orgId,
+        projectId: args.projectId,
+        appName: args.appName,
+      });
+    } else {
+      reply.status(404).send({
+        message: 'Project not found',
+      });
     }
-  );
+  });
 
   fastify.get(
     '/explorer/v1/groups/:projectId/clusters/connectionInfo',
-    function handler(request, reply) {
+    (request, reply) => {
       reply.send(
         mongoURIs.map(({ uri, id }) => ({
           id: id,
@@ -268,15 +275,113 @@ fastify.after(() => {
     }
   );
 
-  fastify.post('/export-csv', function handler(request, reply) {
-    reply.send('ok');
+  fastify.post('/export-csv', (request, reply) => {
+    // TODO: validate
+    const exportId = crypto.randomBytes(8).toString('hex');
+    exportIds.set(exportId, {
+      ...request.body,
+      type: 'csv',
+    });
+
+    reply.send(exportId);
   });
 
-  fastify.post('/export-json', function handler(request, reply) {
-    reply.send('ok');
+  fastify.post('/export-json', (request, reply) => {
+    // TODO: validate
+    const exportId = crypto.randomBytes(8).toString('hex');
+    exportIds.set(exportId, {
+      ...request.body,
+      type: 'json',
+    });
+
+    reply.send(exportId);
   });
 
-  fastify.setNotFoundHandler(function (request, reply) {
+  // TODO: internal
+  fastify.get('/exports', (request, reply) => {
+    const data = {};
+    exportIds.keys().forEach((key) => {
+      data[key] = exportIds.get(key);
+    });
+
+    reply.send(data);
+  });
+
+  fastify.get('/export/:exportId', (request, reply) => {
+    const exportId = request.params.exportId;
+    const exportOptions = exportIds.get(exportId);
+
+    if (exportOptions) {
+      const mongoClient = mongoClients[exportOptions.connectionId];
+
+      if (!mongoClient) {
+        reply.status(400).send({
+          error: "Connection doesn't exist",
+        });
+        return;
+      }
+
+      reply.header('Content-Type', 'application/octet-stream');
+
+      if (exportOptions.type == 'json') {
+        reply.header(
+          'Content-Disposition',
+          `attachment; filename="${exportOptions.ns}.json"`
+        );
+        if (exportOptions.query) {
+          reply.send(
+            exportJSONFromQuery(
+              exportOptions.ns,
+              exportOptions.query,
+              (v) => console.log(v),
+              exportOptions.jsonFormatVariant,
+              mongoClient
+            )
+          );
+        } else {
+          reply.send(
+            exportJSONFromAggregation(
+              exportOptions.ns,
+              exportOptions.aggregation,
+              exportOptions.preferences,
+              (v) => console.log(v),
+              exportOptions.jsonFormatVariant,
+              mongoClient
+            )
+          );
+        }
+      } else {
+        reply.header(
+          'Content-Disposition',
+          `attachment; filename="${exportOptions.ns}.csv"`
+        );
+        if (exportOptions.query) {
+          exportCSVFromQuery(
+            exportOptions.ns,
+            exportOptions.query,
+            ',',
+            null,
+            mongoClient
+          ).then((stream) => reply.send(stream));
+        } else {
+          exportCSVFromAggregation(
+            exportOptions.ns,
+            exportOptions.aggregation,
+            exportOptions.preferences,
+            ',',
+            null,
+            mongoClient
+          ).then((stream) => reply.send(stream));
+        }
+      }
+    } else {
+      reply.status(404).send({
+        error: 'Export not found',
+      });
+    }
+  });
+
+  fastify.setNotFoundHandler((request, reply) => {
     reply.sendFile('index.html');
   });
 });
@@ -302,6 +407,8 @@ fastify.listen({ port: args.port, host: args.host }, (err, address) => {
         console.warn('Forcefully shutting down after 20 seconds.');
         process.exit(1);
       }, 20 * 1000);
+
+      exportIds.close();
 
       Promise.allSettled([
         fastify.close(),
