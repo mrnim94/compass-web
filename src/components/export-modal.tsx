@@ -19,7 +19,7 @@ import {
   backToSelectFieldsToExport,
   readyToExport,
 } from '../../compass/packages/compass-import-export/src/modules/export';
-import { runExport } from './export';
+import { runExport } from '../export';
 import type {
   ExportStatus,
   FieldsToExportOption,
