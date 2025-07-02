@@ -333,7 +333,7 @@ fastify.after(() => {
             exportJSONFromQuery(
               exportOptions.ns,
               exportOptions.query,
-              (v) => console.log(v),
+              {},
               exportOptions.jsonFormatVariant,
               mongoClient
             )
@@ -344,7 +344,7 @@ fastify.after(() => {
               exportOptions.ns,
               exportOptions.aggregation,
               exportOptions.preferences,
-              (v) => console.log(v),
+              {},
               exportOptions.jsonFormatVariant,
               mongoClient
             )
