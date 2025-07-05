@@ -60,7 +60,6 @@ overrides:
   '@mongodb-js/explain-plan-helper': link:./compass/packages/explain-plan-helper
   hadron-app-registry: link:./compass/packages/hadron-app-registry
   hadron-build: link:./compass/packages/hadron-build
-  hadron-document: link:./compass/packages/hadron-document
   hadron-ipc: link:./compass/packages/hadron-ipc
   hadron-type-checker: link:./compass/packages/hadron-type-checker
   mongodb-instance-model: link:./compass/packages/instance-model
@@ -88,23 +87,32 @@ importers:
       bson:
         specifier: ^6.10.4
         version: 6.10.4
-      csv-stringify:
-        specifier: ^6.5.2
-        version: 6.5.2
+      debug:
+        specifier: ^4.3.4
+        version: 4.4.1
       fastify:
         specifier: ^5.3.3
         version: 5.4.0
+      lodash:
+        specifier: ^4.17.21
+        version: 4.17.21
       mongodb:
         specifier: ^6.17.0
         version: 6.17.0
       mongodb-connection-string-url:
         specifier: ^3.0.2
         version: 3.0.2
+      mongodb-ns:
+        specifier: ^2.4.2
+        version: 2.4.2
       node-cache:
         specifier: ^5.1.2
         version: 5.1.2
+      papaparse:
+        specifier: ^5.3.2
+        version: 5.5.3
       stream-json:
-        specifier: ^1.9.1
+        specifier: ^1.7.5
         version: 1.9.1
       strip-bom-stream:
         specifier: ^4.0.0
@@ -993,9 +1001,6 @@ packages:
     resolution: {integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==}
     engines: {node: '>= 8'}
 
-  csv-stringify@6.5.2:
-    resolution: {integrity: sha512-RFPahj0sXcmUyjrObAK+DOWtMvMIFV328n4qZJhgX3x2RqkQgOTU2mCUmiFR0CzM6AzChlRSUErjiJeEt8BaQA==}
-
   debug@4.4.1:
     resolution: {integrity: sha512-KcKCqiftBJcZr++7ykoDIEwSa3XWowTfNPo92BYxjXiyYEVrUQh2aLyhxBCwww+heortUFxEJYcRzosstTEBYQ==}
     engines: {node: '>=6.0'}
@@ -1497,6 +1502,9 @@ packages:
     resolution: {integrity: sha512-t7hw9pI+WvuwNJXwk5zVHpyhIqzg2qTlklJOf0mVxGSbe3Fp2VieZcduNYjaLDoy6p9uGpQEGWG87WpMKlNq8g==}
     engines: {node: '>=8'}
 
+  lodash@4.17.21:
+    resolution: {integrity: sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==}
+
   lru-cache@10.4.3:
     resolution: {integrity: sha512-JNAzZcXrCt42VGLuYz0zfAzDfAvJWW6AfYlDBQyDV5DClI2m5sAmK+OIO7s59XfsRsWHp02jAJrRadPRGTt6SQ==}
 
@@ -1558,6 +1566,9 @@ packages:
 
   mongodb-connection-string-url@3.0.2:
     resolution: {integrity: sha512-rMO7CGo/9BFwyZABcKAWL8UJwH/Kc2x0g72uhDWzG48URRax5TCIcJ7Rc3RZqffZzO/Gwff/jyKwCU9TN8gehA==}
+
+  mongodb-ns@2.4.2:
+    resolution: {integrity: sha512-gYJjEYG4v4a1WSXgUf81OBoBRlj+Z1SlnQVO392fC/4a1CN7CLWDITajZWPFTPh/yRozYk6sHHtZwZmQhodBEA==}
 
   mongodb@6.17.0:
     resolution: {integrity: sha512-neerUzg/8U26cgruLysKEjJvoNSXhyID3RvzvdcpsIi2COYM3FS3o9nlH7fxFtefTb942dX3W9i37oPfCVj4wA==}
@@ -1647,6 +1658,9 @@ packages:
 
   package-json-from-dist@1.0.1:
     resolution: {integrity: sha512-UEZIS3/by4OC8vL3P2dTXRETpebLI2NiI5vIrjaD/5UtrkFX/tNbwjTSRAGC/+7CAo2pIcBaRgWmcBBHcsaCIw==}
+
+  papaparse@5.5.3:
+    resolution: {integrity: sha512-5QvjGxYVjxO59MGU2lHVYpRWBBtKHnlIAcSe1uNFCkkptUh63NFRj0FJQm7nR67puEruUci/ZkjmEFrjCAyP4A==}
 
   parse-json@5.2.0:
     resolution: {integrity: sha512-ayCKvm/phCGxOkYRSCM82iDwct8/EonSEgCSxWxD7ve6jHggsFl4fZVQBPRNgQoKiuV/odhFrGzQXZwbifC8Rg==}
@@ -3016,8 +3030,6 @@ snapshots:
       shebang-command: 2.0.0
       which: 2.0.2
 
-  csv-stringify@6.5.2: {}
-
   debug@4.4.1:
     dependencies:
       ms: 2.1.3
@@ -3682,6 +3694,8 @@ snapshots:
     dependencies:
       p-locate: 4.1.0
 
+  lodash@4.17.21: {}
+
   lru-cache@10.4.3: {}
 
   lru-cache@11.1.0: {}
@@ -3736,6 +3750,8 @@ snapshots:
       '@types/whatwg-url': 11.0.5
       whatwg-url: 13.0.0
 
+  mongodb-ns@2.4.2: {}
+
   mongodb@6.17.0:
     dependencies:
       '@mongodb-js/saslprep': 1.3.0
@@ -3789,6 +3805,8 @@ snapshots:
   p-try@2.2.0: {}
 
   package-json-from-dist@1.0.1: {}
+
+  papaparse@5.5.3: {}
 
   parse-json@5.2.0:
     dependencies:
