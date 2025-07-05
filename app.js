@@ -5,26 +5,37 @@ const path = require('path');
 const net = require('net');
 const tls = require('tls');
 const crypto = require('crypto');
+const { Writable } = require('stream');
 const fastify = require('fastify')({
   logger: true,
 });
 const yargs = require('yargs');
 const { hideBin } = require('yargs/helpers');
 const { ConnectionString } = require('mongodb-connection-string-url');
-const { MongoClient } = require('mongodb');
 const {
   decodeMessageWithTypeByte,
   encodeStringMessageWithTypeByte,
   encodeBinaryMessageWithTypeByte,
   SOCKET_ERROR_EVENT_LIST,
 } = require('./lib/utils');
-// const {
-//   exportJSONFromAggregation,
-//   exportJSONFromQuery,
-//   exportCSVFromAggregation,
-//   exportCSVFromQuery,
-// } = require('./lib/export');
 const NodeCache = require('node-cache');
+const {
+  exportJSONFromQuery,
+  exportJSONFromAggregation,
+} = require('./dist/compass-import-export/export/export-json');
+const {
+  exportCSVFromQuery,
+  exportCSVFromAggregation,
+} = require('./dist/compass-import-export/export/export-csv');
+const {
+  importJSON,
+} = require('./dist/compass-import-export/import/import-json');
+const { importCSV } = require('./dist/compass-import-export/import/import-csv');
+const {
+  analyzeCSVFields,
+} = require('./dist/compass-import-export/import/analyze-csv-fields');
+
+const DataService = require('./lib/data_service');
 
 const args = yargs(hideBin(process.argv))
   .env('CW')
@@ -79,9 +90,9 @@ let mongoURIStrings = args.mongoUri.trim().split(/\s+/);
 const mongoURIs = [];
 
 /**
- * @type {Object.<string, MongoClient>}
+ * @type {Object.<string, DataService>}
  */
-const mongoClients = {};
+const mongoServices = {};
 
 // Validate MongoDB connection strings
 let urlParsingError = '';
@@ -124,7 +135,7 @@ if (args.basicAuthUsername || args.basicAuthPassword) {
 }
 
 for (const { uri, id } of mongoURIs) {
-  mongoClients[id] = new MongoClient(uri.href);
+  mongoServices[id] = new DataService(uri.href);
 }
 
 let shuttingDown = false;
@@ -307,72 +318,82 @@ fastify.after(() => {
     reply.send(data);
   });
 
-  fastify.get('/export/:exportId', (request, reply) => {
+  fastify.get('/export/:exportId', async (request, reply) => {
     const exportId = request.params.exportId;
     const exportOptions = exportIds.get(exportId);
 
     if (exportOptions) {
-      const mongoClient = mongoClients[exportOptions.connectionId];
+      const mongoService = mongoServices[exportOptions.connectionId];
 
-      if (!mongoClient) {
+      if (!mongoService) {
         reply.status(400).send({
           error: "Connection doesn't exist",
         });
-        return;
       }
 
-      reply.header('Content-Type', 'application/octet-stream');
+      reply.raw.setHeader('Content-Type', 'application/octet-stream');
 
-      if (exportOptions.type == 'json') {
-        reply.header(
-          'Content-Disposition',
-          `attachment; filename="${exportOptions.ns}.json"`
-        );
-        if (exportOptions.query) {
-          reply.send(
-            exportJSONFromQuery(
-              exportOptions.ns,
-              exportOptions.query,
-              {},
-              exportOptions.jsonFormatVariant,
-              mongoClient
-            )
+      let res;
+      const outputStream = new Writable({
+        objectMode: true,
+        write: (chunk, encoding, callback) => {
+          reply.raw.write(chunk);
+          callback();
+        },
+      });
+
+      try {
+        if (exportOptions.type == 'json') {
+          reply.raw.setHeader(
+            'Content-Disposition',
+            `attachment; filename="${exportOptions.ns}.json"`
           );
+
+          if (exportOptions.query) {
+            res = await exportJSONFromQuery({
+              ns: exportOptions.ns,
+              query: exportOptions.query,
+              dataService: mongoService,
+              output: outputStream,
+            });
+          } else {
+            res = await exportJSONFromAggregation({
+              ns: exportOptions.ns,
+              aggregation: exportOptions.aggregation,
+              preferences: exportOptions.preferences,
+              dataService: mongoService,
+              output: outputStream,
+            });
+          }
         } else {
-          reply.send(
-            exportJSONFromAggregation(
-              exportOptions.ns,
-              exportOptions.aggregation,
-              exportOptions.preferences,
-              {},
-              exportOptions.jsonFormatVariant,
-              mongoClient
-            )
+          reply.raw.setHeader(
+            'Content-Disposition',
+            `attachment; filename="${exportOptions.ns}.csv"`
           );
+
+          if (exportOptions.query) {
+            res = await exportCSVFromQuery({
+              ns: exportOptions.ns,
+              query: exportOptions.query,
+              dataService: mongoService,
+              output: outputStream,
+            });
+          } else {
+            res = await exportCSVFromAggregation({
+              ns: exportOptions.ns,
+              aggregation: exportOptions.aggregation,
+              preferences: exportOptions.preferences,
+              dataService: mongoService,
+              output: outputStream,
+            });
+          }
         }
-      } else {
-        reply.header(
-          'Content-Disposition',
-          `attachment; filename="${exportOptions.ns}.csv"`
-        );
-        if (exportOptions.query) {
-          exportCSVFromQuery(
-            exportOptions.ns,
-            exportOptions.query,
-            ',',
-            null,
-            mongoClient
-          ).then((stream) => reply.send(stream));
-        } else {
-          exportCSVFromAggregation(
-            exportOptions.ns,
-            exportOptions.aggregation,
-            exportOptions.preferences,
-            ',',
-            null,
-            mongoClient
-          ).then((stream) => reply.send(stream));
-        }
+
+        console.log(`Export ${exportId} result`, res);
+      } catch (err) {
+        console.error(`Export ${exportId} failed`, err);
+      } finally {
+        reply.raw.end();
       }
     } else {
       reply.status(404).send({
@@ -413,7 +434,9 @@ fastify.listen({ port: args.port, host: args.host }, (err, address) => {
       Promise.allSettled([
         fastify.close(),
         // Close all MongoDB clients
-        Object.entries(mongoClients).map(([_, client]) => client.close()),
+        Object.entries(mongoServices).map(([_, service]) =>
+          service.disconnect()
+        ),
       ]).finally(() => {
         clearTimeout(timeout);
         process.exit();

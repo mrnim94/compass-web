@@ -2,7 +2,6 @@ const fs = require('fs');
 const { Writable } = require('stream');
 const { randomBytes } = require('crypto');
 const fastify = require('fastify')({ logger: false });
-const { MongoClient } = require('mongodb');
 const dotenv = require('dotenv');
 const _ = require('lodash');
 const {
@@ -25,8 +24,9 @@ const DataService = require('../lib/data_service');
 
 dotenv.config();
 
-const mongo = new MongoClient(process.env.MONGO_TEST_URI);
-const dataService = new DataService(mongo);
+const dataService = new DataService(
+  process.env.MONGO_TEST_URI ?? 'mongodb://localhost:27017'
+);
 
 fastify.register(require('@fastify/multipart'));
 
@@ -170,7 +170,7 @@ fastify.listen({ port: 3000 }, (err) => {
 
   for (const signal of ['SIGINT', 'SIGTERM']) {
     process.on(signal, () => {
-      Promise.allSettled([fastify.close(), mongo.close()]);
+      Promise.allSettled([fastify.close(), dataService.disconnect()]);
     });
   }
 });
