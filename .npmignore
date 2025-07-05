@@ -24,3 +24,8 @@ CHANGELOG
 .gitmodules
 *.tgz
 package
+.env
+babel.config.js
+jest.config.js
+scripts
+vendors
