@@ -19,6 +19,7 @@ exportJSONFromQuery({
     filter: {
       property_type: 'Apartment',
     },
+    limit: 30,
   },
   dataService,
   output: fs.createWriteStream('listingsAndReviews.jsonl'),

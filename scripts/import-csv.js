@@ -47,39 +47,3 @@ analyzeCSVFields({
   .finally(() => {
     mongo.close();
   });
-
-// importCSV({
-//   dataService: ds,
-//   ns: 'test.mytest',
-//   fields: [],
-//   input: fs.createReadStream(
-//     '/home/ubuntu/compass-web/compass/packages/compass-import-export/test/csv/types/double.csv'
-//   ),
-//   output: process.stdout,
-// })
-//   .then((res) => {
-//     console.log(res);
-//   })
-//   .catch((err) => {
-//     console.error(err);
-//   })
-//   .finally(() => {
-//     mongo.close();
-//   });
-
-// importJSON({
-//   dataService: ds,
-//   ns: 'test.mytest',
-//   input: fs.createReadStream('transactions.json'),
-//   output: process.stdout,
-//   jsonVariant: 'jsonl',
-// })
-//   .then((res) => {
-//     console.log(res);
-//   })
-//   .catch((err) => {
-//     console.error(err);
-//   })
-//   .finally(() => {
-//     mongo.close();
-//   });
