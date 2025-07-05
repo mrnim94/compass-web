@@ -1,4 +1,5 @@
 const path = require('path');
+const fs = require('fs');
 const { webpack, merge } = require('@mongodb-js/webpack-config-compass');
 const compassWebConfig = require('./compass/packages/compass-web/webpack.config');
 const CopyPlugin = require('copy-webpack-plugin');
@@ -42,6 +43,38 @@ module.exports = (env, args) => {
         'process.env.ENABLE_DEBUG': args.mode != 'production',
         'process.env.ENABLE_INFO': args.mode != 'production',
       }),
+      {
+        apply: (compiler) => {
+          compiler.hooks.afterEmit.tap(
+            'MoveCompassImportExportBuildPlugin',
+            (_) => {
+              const compassImportExportDirPath = path.join(
+                config.output.path,
+                'compass-import-export'
+              );
+
+              if (!fs.existsSync(compassImportExportDirPath)) {
+                fs.mkdirSync(compassImportExportDirPath);
+
+                ['csv', 'import', 'export', 'utils'].forEach((subdir) => {
+                  fs.cpSync(
+                    path.join(
+                      __dirname,
+                      ...(
+                        'compass/packages/compass-import-export/dist/' + subdir
+                      ).split('/')
+                    ),
+                    path.join(compassImportExportDirPath, subdir),
+                    {
+                      recursive: true,
+                    }
+                  );
+                });
+              }
+            }
+          );
+        },
+      },
     ],
     devtool: args.mode == 'production' ? false : 'source-map',
     resolve: {
