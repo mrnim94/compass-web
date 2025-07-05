@@ -35,7 +35,7 @@
     "yargs": "^17.7.2",
     "mongodb-ns": "^2.4.2",
     "papaparse": "^5.3.2",
-    "debug": "^4.3.4",
+    "debug": "file:./vendors/debug",
     "lodash": "^4.17.21",
     "hadron-document": "file:./vendors/hadron-document"
   },
