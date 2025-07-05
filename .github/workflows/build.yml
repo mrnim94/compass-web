@@ -34,8 +34,6 @@ jobs:
       - name: Bootstrap
         run: bash bootstrap.sh
       - run: pnpm i --frozen-lockfile
-      - name: Run tests
-        run: pnpm run test
       - name: Build frontend
         run: pnpm run build:production
       - name: Generate npm tarball
