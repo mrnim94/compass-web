@@ -28,4 +28,3 @@ package
 babel.config.js
 jest.config.js
 scripts
-vendors
