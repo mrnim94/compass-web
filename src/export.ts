@@ -92,10 +92,10 @@ export const runExport = ({
       exportAbortController,
     });
 
-    showStartingToast({
-      cancelExport: () => dispatch(cancelExport()),
-      namespace,
-    });
+    // showStartingToast({
+    //   cancelExport: () => dispatch(cancelExport()),
+    //   namespace,
+    // });
 
     let exportSucceeded = false;
 
@@ -234,10 +234,10 @@ export const runExport = ({
         filePath: '',
       });
     } else {
-      showCompletedToast({
-        docsWritten: exportResult?.docsWritten ?? 0,
-        filePath: '',
-      });
+      // showCompletedToast({
+      //   docsWritten: exportResult?.docsWritten ?? 0,
+      //   filePath: '',
+      // });
     }
 
     dispatch({
