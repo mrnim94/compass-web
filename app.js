@@ -28,6 +28,9 @@ const {
   exportCSVFromAggregation,
 } = require('./dist/compass-import-export/export/export-csv');
 const {
+  gatherFieldsFromQuery,
+} = require('./dist/compass-import-export/export/gather-fields');
+const {
   importJSON,
 } = require('./dist/compass-import-export/import/import-json');
 const { importCSV } = require('./dist/compass-import-export/import/import-csv');
@@ -400,6 +403,28 @@ fastify.after(() => {
         error: 'Export not found',
       });
     }
+  });
+
+  fastify.post('/gather-fields', async (request, reply) => {
+    const connectionId = request.body.connectionId;
+
+    const mongoService = connectionId ? mongoServices[connectionId] : null;
+
+    if (!mongoService) {
+      reply.status(400).reply({ error: 'connection id not found' });
+    }
+
+    const res = await gatherFieldsFromQuery({
+      ns: request.body.ns,
+      dataService: mongoService,
+      query: request.body.query,
+      sampleSize: request.body.sampleSize,
+    });
+
+    reply.send({
+      docsProcessed: res.docsProcessed,
+      paths: res.paths,
+    });
   });
 
   fastify.setNotFoundHandler((request, reply) => {

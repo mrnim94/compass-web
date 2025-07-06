@@ -1,6 +1,6 @@
 {
   "name": "compass-web",
-  "version": "0.2.2-alpha.1",
+  "version": "0.2.2-alpha.2",
   "bin": "app.js",
   "scripts": {
     "prebuild": "rm -rf dist",
@@ -39,7 +39,8 @@
     "stream-json": "^1.7.5",
     "strip-bom-stream": "^4.0.0",
     "yargs": "^17.7.2",
-    "compass-preferences-model": "file:./vendors/compass-preferences-model"
+    "compass-preferences-model": "file:./vendors/compass-preferences-model",
+    "mongodb-schema": "^12.5.2"
   },
   "devDependencies": {
     "@jest/globals": "^30.0.3",

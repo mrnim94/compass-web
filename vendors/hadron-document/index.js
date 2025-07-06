@@ -69,4 +69,8 @@ function makeEJSONIdiomatic(value) {
   }
 }
 
-module.exports = { objectToIdiomaticEJSON };
+function isInternalFieldPath(path) {
+  return typeof path === 'string' && /^__safeContent__($|\.)/.test(path);
+}
+
+module.exports = { objectToIdiomaticEJSON, isInternalFieldPath };

@@ -19,7 +19,9 @@ const {
 const {
   analyzeCSVFields,
 } = require('../dist/compass-import-export/import/analyze-csv-fields');
-
+const {
+  gatherFieldsFromQuery,
+} = require('../dist/compass-import-export/export/gather-fields');
 const DataService = require('../lib/data_service');
 
 dotenv.config();
@@ -160,6 +162,22 @@ fastify.post('/upload-csv', async (request, reply) => {
     console.error(err);
     reply.status(502).send({ error: err.message ?? 'Unknown error' });
   }
+});
+
+fastify.get('/gather-fields', async (request, reply) => {
+  const res = await gatherFieldsFromQuery({
+    ns: 'sample_airbnb.listingsAndReviews',
+    dataService,
+    query: {
+      filter: {},
+      limit: 100,
+    },
+  });
+
+  reply.send({
+    docsProcessed: res.docsProcessed,
+    paths: res.paths,
+  });
 });
 
 fastify.listen({ port: 3000 }, (err) => {

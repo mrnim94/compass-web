@@ -11,22 +11,20 @@ import {
   css,
   spacing,
 } from '@mongodb-js/compass-components';
-
 import {
   closeExport,
-  selectFieldsToExport,
   backToSelectFieldOptions,
   backToSelectFieldsToExport,
   readyToExport,
 } from '../../compass/packages/compass-import-export/src/modules/export';
-import { runExport } from '../export';
+import { runExport, selectFieldsToExport } from '../export';
 import type {
   ExportStatus,
   FieldsToExportOption,
 } from '../../compass/packages/compass-import-export/src/modules/export';
 import type { RootExportState } from '../../compass/packages/compass-import-export/src/stores/export-store';
 import { SelectFileType } from '../../compass/packages/compass-import-export/src/components/select-file-type';
-import { ExportSelectFields } from '../../compass/packages/compass-import-export/src/components/export-select-fields';
+import { ExportSelectFields } from './export-select-fields';
 import {
   codeElementId,
   ExportCodeView,

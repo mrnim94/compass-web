@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import { ExportActionTypes, cancelExport } from '../compass/packages/compass-import-export/src/modules/export';
+import { ExportActionTypes, cancelExport, FieldsToExport, getIdForSchemaPath } from '../compass/packages/compass-import-export/src/modules/export';
 import {
   createProjectionFromSchemaFields,
 } from '../compass/packages/compass-import-export/src/export/gather-fields';
@@ -9,15 +9,32 @@ import type {
 import { queryHasProjection } from '../compass/packages/compass-import-export/src/utils/query-has-projection';
 import type { CSVExportPhase } from '../compass/packages/compass-import-export/src/export/export-csv';
 import {
-  showCompletedToast,
   showCancelledToast,
   showFailedToast,
   showInProgressToast,
-  showStartingToast,
 } from '../compass/packages/compass-import-export/src/components/export-toast';
 import type { ExportJSONFormat } from '../compass/packages/compass-import-export/src/export/export-json';
 import type { ExportThunkAction } from '../compass/packages/compass-import-export/src/stores/export-store';
 
+type SelectFieldsToExportAction = {
+  type: ExportActionTypes.SelectFieldsToExport;
+};
+
+type FetchFieldsToExportAction = {
+  type: ExportActionTypes.FetchFieldsToExport;
+  fieldsToExportAbortController: AbortController;
+};
+
+type FetchFieldsToExportErrorAction = {
+  type: ExportActionTypes.FetchFieldsToExportError;
+  errorMessage?: string;
+};
+
+type FetchFieldsToExportSuccessAction = {
+  type: ExportActionTypes.FetchFieldsToExportSuccess;
+  fieldsToExport: FieldsToExport;
+  aborted?: boolean;
+};
 
 export const runExport = ({
   fileType,
@@ -243,6 +260,87 @@ export const runExport = ({
     dispatch({
       type: ExportActionTypes.RunExportSuccess,
       aborted,
+    });
+  };
+};
+
+export const selectFieldsToExport = (): ExportThunkAction<
+  Promise<void>,
+  | SelectFieldsToExportAction
+  | FetchFieldsToExportAction
+  | FetchFieldsToExportErrorAction
+  | FetchFieldsToExportSuccessAction
+> => {
+  return async (
+    dispatch,
+    getState,
+    { logger: { log, mongoLogId } }
+  ) => {
+    dispatch({
+      type: ExportActionTypes.SelectFieldsToExport,
+    });
+
+    const fieldsToExportAbortController = new AbortController();
+
+    dispatch({
+      type: ExportActionTypes.FetchFieldsToExport,
+      fieldsToExportAbortController,
+    });
+
+    const {
+      export: { query, namespace, connectionId },
+    } = getState();
+
+    let gatherFieldsResult;
+
+    try {
+      if (!connectionId) {
+        throw new Error('ConnectionId not provided');
+      }
+
+      const res = await fetch("/gather-fields", {
+        method: "POST",
+        body: JSON.stringify({
+          connectionId: connectionId,
+          ns: namespace,
+          query,
+          sampleSize: 50,
+        }),
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+
+      gatherFieldsResult = await res.json()
+    } catch (err: any) {
+      log.error(
+        mongoLogId(1_001_000_184),
+        'Export',
+        'Failed to gather fields for selecting for export',
+        err
+      );
+      dispatch({
+        type: ExportActionTypes.FetchFieldsToExportError,
+        errorMessage: err?.message,
+      });
+      return;
+    }
+
+    const fields: FieldsToExport = {};
+    for (const schemaPath of gatherFieldsResult.paths) {
+      fields[getIdForSchemaPath(schemaPath)] = {
+        path: schemaPath,
+        // We start all of the fields as unchecked.
+        selected: false,
+      };
+    }
+
+    dispatch({
+      type: ExportActionTypes.FetchFieldsToExportSuccess,
+      fieldsToExport: fields,
+      aborted:
+        fieldsToExportAbortController.signal.aborted ||
+        gatherFieldsResult.aborted,
     });
   };
 };
