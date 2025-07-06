@@ -9,7 +9,7 @@ import {
   SpinLoaderWithLabel,
 } from '@mongodb-js/compass-components';
 import { useWorkspaceTabRouter } from '../compass/packages/compass-web/sandbox/sandbox-workspace-tab-router';
-import { type AllPreferences } from 'compass-preferences-model';
+import { type AllPreferences } from '../compass/packages/compass-preferences-model/src';
 import { compassWebLogger } from './logger';
 
 interface ProjectParams {
