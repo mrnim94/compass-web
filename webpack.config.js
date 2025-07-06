@@ -1,4 +1,5 @@
 const path = require('path');
+const fs = require('fs');
 const { webpack, merge } = require('@mongodb-js/webpack-config-compass');
 const compassWebConfig = require('./compass/packages/compass-web/webpack.config');
 const CopyPlugin = require('copy-webpack-plugin');
@@ -9,8 +10,29 @@ function resolveFromCompass(name) {
   });
 }
 
+function localPolyfill(name) {
+  return path.resolve(
+    __dirname,
+    'src',
+    'polyfills',
+    ...name.split('/'),
+    'index.js'
+  );
+}
+
 module.exports = (env, args) => {
-  const config = merge(compassWebConfig(env, args), {
+  const config = compassWebConfig(env, args);
+
+  delete config.externals;
+  delete config.resolve.alias.stream;
+
+  config.output = {
+    path: config.output.path,
+    filename: config.output.filename,
+    assetModuleFilename: config.output.assetModuleFilename,
+  };
+
+  return merge(config, {
     context: __dirname,
     entry: path.resolve(__dirname, 'src', 'index.tsx'),
     plugins: [
@@ -21,6 +43,38 @@ module.exports = (env, args) => {
         'process.env.ENABLE_DEBUG': args.mode != 'production',
         'process.env.ENABLE_INFO': args.mode != 'production',
       }),
+      {
+        apply: (compiler) => {
+          compiler.hooks.afterEmit.tap(
+            'MoveCompassImportExportBuildPlugin',
+            (_) => {
+              const compassImportExportDirPath = path.join(
+                config.output.path,
+                'compass-import-export'
+              );
+
+              if (!fs.existsSync(compassImportExportDirPath)) {
+                fs.mkdirSync(compassImportExportDirPath);
+
+                ['csv', 'import', 'export', 'utils'].forEach((subdir) => {
+                  fs.cpSync(
+                    path.join(
+                      __dirname,
+                      ...(
+                        'compass/packages/compass-import-export/dist/' + subdir
+                      ).split('/')
+                    ),
+                    path.join(compassImportExportDirPath, subdir),
+                    {
+                      recursive: true,
+                    }
+                  );
+                });
+              }
+            }
+          );
+        },
+      },
     ],
     devtool: args.mode == 'production' ? false : 'source-map',
     resolve: {
@@ -39,6 +93,8 @@ module.exports = (env, args) => {
         '@babel/runtime/helpers/extends': resolveFromCompass(
           '@babel/runtime/helpers/extends'
         ),
+        'react-redux': resolveFromCompass('react-redux'),
+        lodash: path.resolve(__dirname, 'compass', 'node_modules', 'lodash'),
         tls: path.resolve(
           __dirname,
           'compass',
@@ -48,20 +104,14 @@ module.exports = (env, args) => {
           'tls',
           'index.ts'
         ),
+        'fs/promises': localPolyfill('fs/promises'),
+        'stream/promises': localPolyfill('stream/promises'),
+        fs: localPolyfill('fs'),
+        stream: resolveFromCompass('readable-stream'),
       },
     },
     performance: {
       hints: 'warning',
     },
   });
-
-  delete config.externals;
-
-  config.output = {
-    path: config.output.path,
-    filename: config.output.filename,
-    assetModuleFilename: config.output.assetModuleFilename,
-  };
-
-  return config;
 };

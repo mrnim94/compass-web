@@ -5,44 +5,37 @@ const path = require('path');
 const net = require('net');
 const tls = require('tls');
 const crypto = require('crypto');
+const { Writable } = require('stream');
 const fastify = require('fastify')({
   logger: true,
 });
 const yargs = require('yargs');
 const { hideBin } = require('yargs/helpers');
 const { ConnectionString } = require('mongodb-connection-string-url');
+const {
+  decodeMessageWithTypeByte,
+  encodeStringMessageWithTypeByte,
+  encodeBinaryMessageWithTypeByte,
+  SOCKET_ERROR_EVENT_LIST,
+} = require('./lib/utils');
+const NodeCache = require('node-cache');
+const {
+  exportJSONFromQuery,
+  exportJSONFromAggregation,
+} = require('./dist/compass-import-export/export/export-json');
+const {
+  exportCSVFromQuery,
+  exportCSVFromAggregation,
+} = require('./dist/compass-import-export/export/export-csv');
+const {
+  importJSON,
+} = require('./dist/compass-import-export/import/import-json');
+const { importCSV } = require('./dist/compass-import-export/import/import-csv');
+const {
+  analyzeCSVFields,
+} = require('./dist/compass-import-export/import/analyze-csv-fields');
 
-// WebSocket message utilities
-const SOCKET_ERROR_EVENT_LIST = ['error', 'close', 'timeout', 'parseError'];
-
-function encodeStringMessageWithTypeByte(message) {
-  const utf8Encoder = new TextEncoder();
-  const utf8Array = utf8Encoder.encode(message);
-  return encodeMessageWithTypeByte(utf8Array, 0x01);
-}
-
-function encodeBinaryMessageWithTypeByte(message) {
-  return encodeMessageWithTypeByte(message, 0x02);
-}
-
-function encodeMessageWithTypeByte(message, type) {
-  const encoded = new Uint8Array(message.length + 1);
-  encoded[0] = type;
-  encoded.set(message, 1);
-  return encoded;
-}
-
-function decodeMessageWithTypeByte(message) {
-  const typeByte = message[0];
-  if (typeByte === 0x01) {
-    const jsonBytes = message.subarray(1);
-    const textDecoder = new TextDecoder('utf-8');
-    const jsonStr = textDecoder.decode(jsonBytes);
-    return JSON.parse(jsonStr);
-  } else if (typeByte === 0x02) {
-    return message.subarray(1);
-  }
-}
+const DataService = require('./lib/data_service');
 
 const args = yargs(hideBin(process.argv))
   .env('CW')
@@ -96,6 +89,11 @@ const args = yargs(hideBin(process.argv))
 let mongoURIStrings = args.mongoUri.trim().split(/\s+/);
 const mongoURIs = [];
 
+/**
+ * @type {Object.<string, DataService>}
+ */
+const mongoServices = {};
+
 // Validate MongoDB connection strings
 let urlParsingError = '';
 mongoURIStrings.forEach((uri, index) => {
@@ -136,7 +134,13 @@ if (args.basicAuthUsername || args.basicAuthPassword) {
   };
 }
 
+for (const { uri, id } of mongoURIs) {
+  mongoServices[id] = new DataService(uri.href);
+}
+
 let shuttingDown = false;
+
+const exportIds = new NodeCache({ stdTTL: 3600 });
 
 fastify.register(require('@fastify/static'), {
   root: path.join(__dirname, 'dist'),
@@ -145,7 +149,7 @@ fastify.register(require('@fastify/static'), {
 fastify.register(require('@fastify/websocket'));
 
 // Websocket proxy for MongoDB connections
-fastify.register(async function (fastify) {
+fastify.register(async (fastify) => {
   fastify.get(
     '/clusterConnection/:projectId',
     { websocket: true },
@@ -236,30 +240,27 @@ fastify.after(() => {
     fastify.addHook('onRequest', fastify.basicAuth);
   }
 
-  fastify.get('/projectId', function handler(request, reply) {
+  fastify.get('/projectId', (request, reply) => {
     reply.type('text/plain').send(args.projectId);
   });
 
-  fastify.get(
-    '/cloud-mongodb-com/v2/:projectId/params',
-    function handler(request, reply) {
-      if (request.params.projectId == args.projectId) {
-        reply.send({
-          orgId: args.orgId,
-          projectId: args.projectId,
-          appName: args.appName,
-        });
-      } else {
-        reply.status(404).send({
-          message: 'Project not found',
-        });
-      }
+  fastify.get('/cloud-mongodb-com/v2/:projectId/params', (request, reply) => {
+    if (request.params.projectId == args.projectId) {
+      reply.send({
+        orgId: args.orgId,
+        projectId: args.projectId,
+        appName: args.appName,
+      });
+    } else {
+      reply.status(404).send({
+        message: 'Project not found',
+      });
     }
-  );
+  });
 
   fastify.get(
     '/explorer/v1/groups/:projectId/clusters/connectionInfo',
-    function handler(request, reply) {
+    (request, reply) => {
       reply.send(
         mongoURIs.map(({ uri, id }) => ({
           id: id,
@@ -285,7 +286,123 @@ fastify.after(() => {
     }
   );
 
-  fastify.setNotFoundHandler(function (request, reply) {
+  fastify.post('/export-csv', (request, reply) => {
+    // TODO: validate
+    const exportId = crypto.randomBytes(8).toString('hex');
+    exportIds.set(exportId, {
+      ...request.body,
+      type: 'csv',
+    });
+
+    reply.send(exportId);
+  });
+
+  fastify.post('/export-json', (request, reply) => {
+    // TODO: validate
+    const exportId = crypto.randomBytes(8).toString('hex');
+    exportIds.set(exportId, {
+      ...request.body,
+      type: 'json',
+    });
+
+    reply.send(exportId);
+  });
+
+  // TODO: internal
+  fastify.get('/exports', (request, reply) => {
+    const data = {};
+    exportIds.keys().forEach((key) => {
+      data[key] = exportIds.get(key);
+    });
+
+    reply.send(data);
+  });
+
+  fastify.get('/export/:exportId', async (request, reply) => {
+    const exportId = request.params.exportId;
+    const exportOptions = exportIds.get(exportId);
+
+    if (exportOptions) {
+      const mongoService = mongoServices[exportOptions.connectionId];
+
+      if (!mongoService) {
+        reply.status(400).send({
+          error: "Connection doesn't exist",
+        });
+      }
+
+      reply.raw.setHeader('Content-Type', 'application/octet-stream');
+
+      let res;
+      const outputStream = new Writable({
+        objectMode: true,
+        write: (chunk, encoding, callback) => {
+          reply.raw.write(chunk);
+          callback();
+        },
+      });
+
+      try {
+        if (exportOptions.type == 'json') {
+          reply.raw.setHeader(
+            'Content-Disposition',
+            `attachment; filename="${exportOptions.ns}.json"`
+          );
+
+          if (exportOptions.query) {
+            res = await exportJSONFromQuery({
+              ns: exportOptions.ns,
+              query: exportOptions.query,
+              dataService: mongoService,
+              output: outputStream,
+            });
+          } else {
+            res = await exportJSONFromAggregation({
+              ns: exportOptions.ns,
+              aggregation: exportOptions.aggregation,
+              preferences: exportOptions.preferences,
+              dataService: mongoService,
+              output: outputStream,
+            });
+          }
+        } else {
+          reply.raw.setHeader(
+            'Content-Disposition',
+            `attachment; filename="${exportOptions.ns}.csv"`
+          );
+
+          if (exportOptions.query) {
+            res = await exportCSVFromQuery({
+              ns: exportOptions.ns,
+              query: exportOptions.query,
+              dataService: mongoService,
+              output: outputStream,
+            });
+          } else {
+            res = await exportCSVFromAggregation({
+              ns: exportOptions.ns,
+              aggregation: exportOptions.aggregation,
+              preferences: exportOptions.preferences,
+              dataService: mongoService,
+              output: outputStream,
+            });
+          }
+        }
+
+        console.log(`Export ${exportId} result`, res);
+      } catch (err) {
+        console.error(`Export ${exportId} failed`, err);
+      } finally {
+        reply.raw.end();
+      }
+    } else {
+      reply.status(404).send({
+        error: 'Export not found',
+      });
+    }
+  });
+
+  fastify.setNotFoundHandler((request, reply) => {
     reply.sendFile('index.html');
   });
 });
@@ -312,20 +429,18 @@ fastify.listen({ port: args.port, host: args.host }, (err, address) => {
         process.exit(1);
       }, 20 * 1000);
 
-      let exitCode = 0;
-      fastify
-        .close()
-        .then(
-          () => {},
-          (err) => {
-            console.error(err);
-            exitCode = 1;
-          }
-        )
-        .finally(() => {
-          clearTimeout(timeout);
-          process.exit(exitCode);
-        });
+      exportIds.close();
+
+      Promise.allSettled([
+        fastify.close(),
+        // Close all MongoDB clients
+        Object.entries(mongoServices).map(([_, service]) =>
+          service.disconnect()
+        ),
+      ]).finally(() => {
+        clearTimeout(timeout);
+        process.exit();
+      });
     });
   }
 });

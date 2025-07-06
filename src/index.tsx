@@ -10,7 +10,7 @@ import {
 } from '@mongodb-js/compass-components';
 import { useWorkspaceTabRouter } from '../compass/packages/compass-web/sandbox/sandbox-workspace-tab-router';
 import { type AllPreferences } from 'compass-preferences-model';
-import { compassWebLogger } from './components/logger';
+import { compassWebLogger } from './logger';
 
 interface ProjectParams {
   projectId: string;
@@ -39,6 +39,7 @@ const initialPreferences: Partial<AllPreferences> = {
   optInDataExplorerGenAIFeatures: false,
   enableDataModeling: false,
   trackUsageStatistics: false,
+  enableImportExport: true,
 };
 
 resetGlobalCSS();

@@ -1,6 +1,5 @@
 app.js
 lerna.json
-lib
 node_modules
 package-lock.json
 polyfills
@@ -24,3 +23,7 @@ CHANGELOG
 .gitmodules
 *.tgz
 package
+.env
+babel.config.js
+jest.config.js
+scripts
