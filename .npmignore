@@ -1,6 +1,5 @@
 app.js
 lerna.json
-lib
 node_modules
 package-lock.json
 polyfills
