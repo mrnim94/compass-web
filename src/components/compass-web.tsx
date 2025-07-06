@@ -43,8 +43,8 @@ import {
   DropNamespacePlugin,
   RenameCollectionPlugin,
 } from '@mongodb-js/compass-databases-collections';
-import { PreferencesProvider } from 'compass-preferences-model/provider';
-import type { AllPreferences } from 'compass-preferences-model/provider';
+import { PreferencesProvider } from '../../compass/packages/compass-preferences-model/src/provider';
+import type { AllPreferences } from '../../compass/packages/compass-preferences-model/src/provider';
 import FieldStorePlugin from '@mongodb-js/compass-field-store';
 import { AtlasServiceProvider } from '@mongodb-js/atlas-service/provider';
 import { AtlasAiServiceProvider } from '@mongodb-js/compass-generative-ai/provider';

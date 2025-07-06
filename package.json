@@ -1,6 +1,6 @@
 {
   "name": "compass-web",
-  "version": "0.2.2-alpha.0",
+  "version": "0.2.2-alpha.1",
   "bin": "app.js",
   "scripts": {
     "prebuild": "rm -rf dist",
@@ -38,7 +38,8 @@
     "papaparse": "^5.3.2",
     "stream-json": "^1.7.5",
     "strip-bom-stream": "^4.0.0",
-    "yargs": "^17.7.2"
+    "yargs": "^17.7.2",
+    "compass-preferences-model": "file:./vendors/compass-preferences-model"
   },
   "devDependencies": {
     "@jest/globals": "^30.0.3",
@@ -72,7 +73,6 @@
     "@mongodb-js/mocha-config-compass": "^1.6.8",
     "@mongodb-js/prettier-config-compass": "^1.2.8",
     "@mongodb-js/webpack-config-compass": "^1.6.8",
-    "compass-preferences-model": "^2.36.0",
     "copy-webpack-plugin": "^13.0.0",
     "dotenv": "^16.5.0",
     "hadron-app-registry": "^9.4.8",
@@ -110,7 +110,6 @@
       "@mongodb-js/compass-intercom": "link:./compass/packages/compass-intercom",
       "@mongodb-js/compass-logging": "link:./compass/packages/compass-logging",
       "@mongodb-js/compass-maybe-protect-connection-string": "link:./compass/packages/compass-maybe-protect-connection-string",
-      "compass-preferences-model": "link:./compass/packages/compass-preferences-model",
       "@mongodb-js/compass-query-bar": "link:./compass/packages/compass-query-bar",
       "@mongodb-js/compass-saved-aggregations-queries": "link:./compass/packages/compass-saved-aggregations-queries",
       "@mongodb-js/compass-schema": "link:./compass/packages/compass-schema",

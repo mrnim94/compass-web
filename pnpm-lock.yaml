@@ -35,7 +35,6 @@ overrides:
   '@mongodb-js/compass-intercom': link:./compass/packages/compass-intercom
   '@mongodb-js/compass-logging': link:./compass/packages/compass-logging
   '@mongodb-js/compass-maybe-protect-connection-string': link:./compass/packages/compass-maybe-protect-connection-string
-  compass-preferences-model: link:./compass/packages/compass-preferences-model
   '@mongodb-js/compass-query-bar': link:./compass/packages/compass-query-bar
   '@mongodb-js/compass-saved-aggregations-queries': link:./compass/packages/compass-saved-aggregations-queries
   '@mongodb-js/compass-schema': link:./compass/packages/compass-schema
@@ -90,6 +89,9 @@ importers:
       bson:
         specifier: ^6.10.4
         version: 6.10.4
+      compass-preferences-model:
+        specifier: file:./vendors/compass-preferences-model
+        version: file:vendors/compass-preferences-model
       debug:
         specifier: file:./vendors/debug
         version: file:vendors/debug
@@ -220,9 +222,6 @@ importers:
       '@mongodb-js/webpack-config-compass':
         specifier: link:compass/configs/webpack-config-compass
         version: link:compass/configs/webpack-config-compass
-      compass-preferences-model:
-        specifier: link:compass/packages/compass-preferences-model
-        version: link:compass/packages/compass-preferences-model
       copy-webpack-plugin:
         specifier: ^13.0.0
         version: 13.0.0(webpack@5.99.9)
@@ -991,6 +990,9 @@ packages:
 
   commander@2.20.3:
     resolution: {integrity: sha512-GpVkmM8vF2vQUkj2LvZmD35JxeJOLCwJ9cUkugyk2nuhbv3+mJvpLYYt+0+USMxE+oj+ey/lJEnhZw75x/OMcQ==}
+
+  compass-preferences-model@file:vendors/compass-preferences-model:
+    resolution: {directory: vendors/compass-preferences-model, type: directory}
 
   concat-map@0.0.1:
     resolution: {integrity: sha512-/Srv4dswyQNBfohGpz9o6Yb3Gz3SrUDqBH5rTuhGR7ahtlbYKnVxw2bCFMRljaA7EXHaXZ8wsHdodFvbkhKmqg==}
@@ -3045,6 +3047,8 @@ snapshots:
   color-name@1.1.4: {}
 
   commander@2.20.3: {}
+
+  compass-preferences-model@file:vendors/compass-preferences-model: {}
 
   concat-map@0.0.1: {}
 
