@@ -7,7 +7,7 @@ A port of the MongoDB Compass to Web. The frontend is rebuilt and re-packaged fr
 
 ## ![screenshot](/images/screenshot3.png)
 
-## Supported Features
+## Unsupported Features
 
 Not all Compass Desktop features are available on Compass Web. Here is non-exhaustive list unsupported features.
 
