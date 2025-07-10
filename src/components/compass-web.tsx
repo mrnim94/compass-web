@@ -249,12 +249,10 @@ const CompassWeb = ({
         } else if (theme == 'LIGHT') {
           setDarkMode(false);
         } else {
-          if (window.matchMedia) {
-            if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-              setDarkMode(true);
-            } else {
-              setDarkMode(false);
-            }
+          if (window.matchMedia?.('(prefers-color-scheme: dark)').matches) {
+            setDarkMode(true);
+          } else {
+            setDarkMode(false);
           }
         }
       });
