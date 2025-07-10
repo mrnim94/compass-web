@@ -248,6 +248,14 @@ const CompassWeb = ({
           setDarkMode(true);
         } else if (theme == 'LIGHT') {
           setDarkMode(false);
+        } else {
+          if (window.matchMedia) {
+            if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+              setDarkMode(true);
+            } else {
+              setDarkMode(false);
+            }
+          }
         }
       });
   }, [preferencesAccess]);
