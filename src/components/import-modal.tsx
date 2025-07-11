@@ -24,13 +24,12 @@ import {
 import type { ProcessStatus } from '../../compass/packages/compass-import-export/src/constants/process-status';
 import { ImportPreview } from '../../compass/packages/compass-import-export/src/components/import-preview';
 import ImportPreviewLoader from '../../compass/packages/compass-import-export/src/components/import-preview-loader';
-import { ImportOptions } from '../../compass/packages/compass-import-export/src/components/import-options';
+import { ImportOptions } from './import-options';
 import type { AcceptedFileType } from '../../compass/packages/compass-import-export/src/constants/file-types';
 import {
   startImport,
   cancelImport,
   skipCSVAnalyze,
-  selectImportFileName,
   setDelimiter,
   setStopOnErrors,
   setIgnoreBlanks,
@@ -38,6 +37,7 @@ import {
   toggleIncludeField,
   setFieldType,
 } from '../../compass/packages/compass-import-export/src/modules/import';
+import { selectImportFile } from '../import'
 import type { RootImportState } from '../../compass/packages/compass-import-export/src/stores/import-store';
 import type { FieldFromCSV } from '../../compass/packages/compass-import-export/src/modules/import';
 import { ImportFileInput } from './import-file-input';
@@ -90,7 +90,7 @@ type ImportModalProps = {
   /**
    * See `<ImportOptions />`
    */
-  selectImportFileName: (fileName: string) => void;
+  selectImportFile: (file: File) => void;
   setDelimiter: (delimiter: Delimiter) => void;
   delimiter: Delimiter;
   fileType: AcceptedFileType | '';
@@ -126,12 +126,11 @@ function ImportModal({
 
   errors,
   status,
-
-  selectImportFileName,
+  fileName,
+  selectImportFile,
   setDelimiter,
   delimiter,
   fileType,
-  fileName,
   stopOnErrors,
   setStopOnErrors,
   ignoreBlanks,
@@ -148,8 +147,6 @@ function ImportModal({
   const darkMode = useDarkMode();
 
   const modalBodyRef = useRef<HTMLDivElement>(null);
-
-  const fileRef = useRef<File | null>(null);
 
   const handleClose = useCallback(() => {
     cancelImport();
@@ -185,7 +182,7 @@ function ImportModal({
           autoOpen
           onCancel={handleClose}
           fileName={fileName}
-          selectImportFileName={selectImportFileName}
+          selectImportFile={selectImportFile}
         />
       </div>
     );
@@ -205,7 +202,7 @@ function ImportModal({
           setDelimiter={setDelimiter}
           fileType={fileType}
           fileName={fileName}
-          selectImportFileName={selectImportFileName}
+          selectImportFile={selectImportFile}
           stopOnErrors={stopOnErrors}
           setStopOnErrors={setStopOnErrors}
           ignoreBlanks={ignoreBlanks}
@@ -303,7 +300,7 @@ export default connect(mapStateToProps, {
   startImport,
   cancelImport,
   skipCSVAnalyze,
-  selectImportFileName,
+  selectImportFile,
   setDelimiter,
   setStopOnErrors,
   setIgnoreBlanks,

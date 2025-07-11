@@ -5,6 +5,7 @@ const path = require('path');
 const net = require('net');
 const tls = require('tls');
 const crypto = require('crypto');
+const fs = require('fs');
 const { Writable } = require('stream');
 const fastify = require('fastify')({
   logger: true,
@@ -33,7 +34,14 @@ const {
 const {
   importJSON,
 } = require('./dist/compass-import-export/import/import-json');
+const {
+  guessFileType,
+} = require('./dist/compass-import-export/import/guess-filetype');
 const { importCSV } = require('./dist/compass-import-export/import/import-csv');
+const {
+  listCSVFields,
+} = require('./dist/compass-import-export/import/list-csv-fields');
+
 const {
   analyzeCSVFields,
 } = require('./dist/compass-import-export/import/analyze-csv-fields');
@@ -424,6 +432,32 @@ fastify.after(() => {
     reply.send({
       docsProcessed: res.docsProcessed,
       paths: res.paths,
+    });
+  });
+
+  fastify.post('/guess-filetype', async (request, reply) => {
+    const file = await request.file();
+
+    if (!file) {
+      reply.status(400).send({ error: 'No file' });
+    }
+
+    const guessFileTypeRes = await guessFileType({
+      input: fs.createReadStream(file.filename),
+    });
+
+    let listCSVFieldsRes = null;
+    if (guessFileTypeRes.type === 'csv') {
+      listCSVFieldsRes = await listCSVFields({
+        input: fs.createReadStream(file.filename),
+        delimiter: res.csvDelimiter,
+        newline: res.newline,
+      });
+    }
+
+    reply.send({
+      ...guessFileTypeRes,
+      csvFields: listCSVFieldsRes,
     });
   });
 
