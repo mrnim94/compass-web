@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, MutableRefObject } from 'react';
 import FileInput from './file-input';
 
 type ImportFileInputProps = {
@@ -6,6 +6,7 @@ type ImportFileInputProps = {
   onCancel?: () => void;
   selectImportFile: (file: File) => void;
   fileName?: string;
+  fileRef: MutableRefObject<File | null>;
 };
 
 function ImportFileInput({
@@ -13,13 +14,16 @@ function ImportFileInput({
   onCancel,
   selectImportFile,
   fileName,
+  fileRef,
 }: ImportFileInputProps) {
   const handleChooseFile = useCallback(
     (files: File[]) => {
       if (files.length > 0) {
         void selectImportFile(files[0]);
+        fileRef.current = files[0];
       } else if (typeof onCancel === 'function') {
         onCancel();
+        fileRef.current = null;
       }
     },
     [onCancel, selectImportFile]

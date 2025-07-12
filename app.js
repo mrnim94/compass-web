@@ -233,6 +233,8 @@ fastify.register(async (fastify) => {
   );
 });
 
+fastify.register(require('@fastify/multipart'));
+
 if (basicAuth) {
   fastify.register(require('@fastify/basic-auth'), {
     validate: (username, password, _req, _reply, done) => {
@@ -443,7 +445,7 @@ fastify.after(() => {
     }
 
     const guessFileTypeRes = await guessFileType({
-      input: fs.createReadStream(file.filename),
+      input: file.file,
     });
 
     let listCSVFieldsRes = null;
@@ -459,6 +461,80 @@ fastify.after(() => {
       ...guessFileTypeRes,
       csvFields: listCSVFieldsRes,
     });
+  });
+
+  fastify.post('/upload-json', async (request, reply) => {
+    const file = await request.file();
+
+    if (!file) {
+      reply.status(400).send({ error: 'No file' });
+    }
+
+    const rawJson = file.fields.json?.value;
+    if (!rawJson) {
+      reply.status(400).send({ error: 'No json body' });
+    }
+
+    const body = JSON.parse(rawJson);
+
+    const mongoService = body.connectionId
+      ? mongoServices[body.connectionId]
+      : null;
+    if (!mongoService) {
+      reply.status(400).send({ error: 'connection id not found' });
+    }
+
+    try {
+      const res = await importJSON({
+        dataService: mongoService,
+        ns: body.ns,
+        jsonVariant: body.jsonVariant,
+        input: file.file,
+        stopOnErrors: body.stopOnErrors,
+      });
+
+      reply.send(res);
+    } catch (err) {
+      console.error(err);
+      reply.status(502).send({ error: err.message ?? 'Unknown error' });
+    }
+  });
+
+  fastify.post('/upload-csv', async (request, reply) => {
+    const file = await request.file();
+
+    if (!file) {
+      reply.status(400).send({ error: 'No file' });
+    }
+
+    const rawJson = file.fields.json?.value;
+    if (!rawJson) {
+      reply.status(400).send({ error: 'No json body' });
+    }
+
+    const body = JSON.parse(rawJson);
+
+    const mongoService = body.connectionId
+      ? mongoServices[body.connectionId]
+      : null;
+    if (!mongoService) {
+      reply.status(400).send({ error: 'connection id not found' });
+    }
+
+    try {
+      const importResult = await importCSV({
+        dataService: mongoService,
+        ns: body.ns,
+        delimiter: body.delimiter,
+        fields: body.delimiter,
+        input: file.file,
+      });
+
+      reply.send(res);
+    } catch (err) {
+      console.error(err);
+      reply.status(502).send({ error: err.message ?? 'Unknown error' });
+    }
   });
 
   fastify.setNotFoundHandler((request, reply) => {

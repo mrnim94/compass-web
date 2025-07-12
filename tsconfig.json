@@ -8,7 +8,14 @@
       "react-redux": ["./compass/node_modules/redux"],
       "lodash": ["./compass/node_modules/@types/lodash"],
       "react": ["./compass/node_modules/@types/react"],
-      "react-dom": ["./compass/node_modules/@types/react-dom"]
+      "react-dom": ["./compass/node_modules/@types/react-dom"],
+      "@leafygreen-ui/emotion": [
+        "./compass/node_modules/@leafygreen-ui/emotion"
+      ],
+      "@leafygreen-ui/palette": [
+        "./compass/node_modules/@leafygreen-ui/palette"
+      ],
+      "@leafygreen-ui/tokens": ["./compass/node_modules/@leafygreen-ui/tokens"]
     }
   },
   "include": ["src/**/*", "compass/packages/**/*", "compass/configs/**/*"]

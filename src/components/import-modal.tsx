@@ -27,7 +27,6 @@ import ImportPreviewLoader from '../../compass/packages/compass-import-export/sr
 import { ImportOptions } from './import-options';
 import type { AcceptedFileType } from '../../compass/packages/compass-import-export/src/constants/file-types';
 import {
-  startImport,
   cancelImport,
   skipCSVAnalyze,
   setDelimiter,
@@ -37,7 +36,7 @@ import {
   toggleIncludeField,
   setFieldType,
 } from '../../compass/packages/compass-import-export/src/modules/import';
-import { selectImportFile } from '../import'
+import { selectImportFile, startImport } from '../import';
 import type { RootImportState } from '../../compass/packages/compass-import-export/src/stores/import-store';
 import type { FieldFromCSV } from '../../compass/packages/compass-import-export/src/modules/import';
 import { ImportFileInput } from './import-file-input';
@@ -80,7 +79,7 @@ const dataTypesLinkStyles = css({
 type ImportModalProps = {
   isOpen: boolean;
   ns: string;
-  startImport: () => void;
+  startImport: (file: File) => void;
   cancelImport: () => void;
   skipCSVAnalyze: () => void;
   closeImport: () => void;
@@ -148,6 +147,8 @@ function ImportModal({
 
   const modalBodyRef = useRef<HTMLDivElement>(null);
 
+  const fileRef = useRef<File | null>(null);
+
   const handleClose = useCallback(() => {
     cancelImport();
     closeImport();
@@ -183,6 +184,7 @@ function ImportModal({
           onCancel={handleClose}
           fileName={fileName}
           selectImportFile={selectImportFile}
+          fileRef={fileRef}
         />
       </div>
     );
@@ -251,7 +253,7 @@ function ImportModal({
       <ModalFooter>
         <Button
           data-testid="import-button"
-          onClick={startImport}
+          onClick={() => startImport(fileRef.current!)}
           disabled={
             !fileName ||
             status === STARTED ||
