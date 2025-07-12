@@ -444,23 +444,11 @@ fastify.after(() => {
       reply.status(400).send({ error: 'No file' });
     }
 
-    const guessFileTypeRes = await guessFileType({
+    const res = await guessFileType({
       input: file.file,
     });
 
-    let listCSVFieldsRes = null;
-    if (guessFileTypeRes.type === 'csv') {
-      listCSVFieldsRes = await listCSVFields({
-        input: fs.createReadStream(file.filename),
-        delimiter: res.csvDelimiter,
-        newline: res.newline,
-      });
-    }
-
-    reply.send({
-      ...guessFileTypeRes,
-      csvFields: listCSVFieldsRes,
-    });
+    reply.send(res);
   });
 
   fastify.post('/upload-json', async (request, reply) => {
@@ -522,12 +510,69 @@ fastify.after(() => {
     }
 
     try {
-      const importResult = await importCSV({
+      const res = await importCSV({
         dataService: mongoService,
         ns: body.ns,
         delimiter: body.delimiter,
         fields: body.delimiter,
         input: file.file,
+      });
+
+      reply.send(res);
+    } catch (err) {
+      console.error(err);
+      reply.status(502).send({ error: err.message ?? 'Unknown error' });
+    }
+  });
+
+  fastify.post('/list-csv-fields', async (request, reply) => {
+    const file = await request.file();
+
+    if (!file) {
+      reply.status(400).send({ error: 'No file' });
+    }
+
+    const rawJson = file.fields.json?.value;
+    if (!rawJson) {
+      reply.status(400).send({ error: 'No json body' });
+    }
+
+    const body = JSON.parse(rawJson);
+
+    try {
+      const res = await listCSVFields({
+        newline: body.newline,
+        delimiter: body.delimiter,
+        input: file.file,
+      });
+
+      reply.send(res);
+    } catch (err) {
+      console.error(err);
+      reply.status(502).send({ error: err.message ?? 'Unknown error' });
+    }
+  });
+
+  fastify.post('/analyze-csv-fields', async (request, reply) => {
+    const file = await request.file();
+
+    if (!file) {
+      reply.status(400).send({ error: 'No file' });
+    }
+
+    const rawJson = file.fields.json?.value;
+    if (!rawJson) {
+      reply.status(400).send({ error: 'No json body' });
+    }
+
+    const body = JSON.parse(rawJson);
+
+    try {
+      const res = await analyzeCSVFields({
+        newline: body.newline,
+        delimiter: body.delimiter,
+        input: file.file,
+        ignoreEmptyStrings: body.ignoreEmptyStrings,
       });
 
       reply.send(res);

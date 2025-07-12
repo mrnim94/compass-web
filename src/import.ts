@@ -1,8 +1,14 @@
 import {
+  ANALYZE_FAILED,
+  ANALYZE_FINISHED,
+  ANALYZE_STARTED,
   FAILED,
+  FieldFromCSV,
   FILE_SELECT_ERROR,
   FILE_SELECTED,
   FINISHED,
+  SET_PREVIEW,
+  skipCSVAnalyze,
 } from '../compass/packages/compass-import-export/src/modules/import';
 import { CSVParsableFieldType } from '../compass/packages/compass-import-export/src/csv/csv-types';
 import type { ImportThunkAction } from '../compass/packages/compass-import-export/src/stores/import-store';
@@ -21,6 +27,10 @@ import {
 import { showErrorDetails } from '../compass/packages/compass-components/src/hooks/use-error-details'
 import { ErrorJSON, ImportResult } from '../compass/packages/compass-import-export/src/import/import-types';
 
+
+function csvHeaderNameToFieldName(name: string) {
+  return name.replace(/\[\d+\]/g, '[]');
+}
 
 const onFileSelectError = (error: Error) => ({
   type: FILE_SELECT_ERROR,
@@ -42,6 +52,171 @@ const onFinished = ({
   firstErrors,
 });
 
+const loadCSVPreviewDocs = (file: File): ImportThunkAction<Promise<void>> => {
+  return async (dispatch, getState, { logger: { log, mongoLogId } }) => {
+    const { delimiter, newline } = getState().import;
+    try {
+
+      const formData = new FormData()
+      formData.append("file", file);
+      formData.append("json", JSON.stringify({ delimiter, newline }))
+
+      let resp = await fetch("/list-csv-fields", {
+        method: "POST",
+        body: formData
+      })
+
+      // const result = await listCSVFields({ input, delimiter, newline });
+      const result = await resp.json();
+      const fieldMap: Record<string, number[]> = {};
+      const fields: FieldFromCSV[] = [];
+
+      // group the array fields' cells together so that large arrays don't kill
+      // performance and cause excessive horizontal scrolling
+      for (const [index, name] of result.headerFields.entries()) {
+        const uniqueName = csvHeaderNameToFieldName(name);
+        if (fieldMap[uniqueName]) {
+          fieldMap[uniqueName].push(index);
+        } else {
+          fieldMap[uniqueName] = [index];
+          fields.push({
+            // foo[] is an array, foo[].bar is not even though we group its
+            // preview items together.
+            isArray: uniqueName.endsWith('[]'),
+            path: uniqueName,
+            checked: true,
+            type: 'mixed',
+          });
+        }
+      }
+
+      const values: string[][] = [];
+      for (const row of result.preview) {
+        const transformed: string[] = [];
+        for (const field of fields) {
+          if (fieldMap[field.path].length === 1) {
+            // if this is either not an array or an array of length one, just
+            // use the value as is
+            const cellValue = row[fieldMap[field.path][0]];
+            transformed.push(cellValue);
+          } else {
+            // if multiple cells map to the same unique field, then join all the
+            // cells for the same unique field together into one array
+            const cellValues = fieldMap[field.path]
+              .map((index) => row[index])
+              .filter((value) => value.length > 0);
+            // present values in foo[] as an array
+            // present values in foo[].bar as just a list of examples
+            const previewText = field.isArray
+              ? JSON.stringify(cellValues, null, 2)
+              : cellValues.join(', ');
+            transformed.push(previewText);
+          }
+        }
+        values.push(transformed);
+      }
+
+      await dispatch(loadTypes(file, fields, values));
+    } catch (err) {
+      log.error(
+        mongoLogId(1001000097),
+        'Import',
+        'Failed to load preview docs',
+        err
+      );
+
+      // The most likely way to get here is if the file is not encoded as UTF8.
+      dispatch({
+        type: ANALYZE_FAILED,
+        error: err,
+      });
+    }
+  };
+};
+
+const loadTypes = (
+  file: File,
+  fields: FieldFromCSV[],
+  values: string[][]
+): ImportThunkAction<Promise<void>> => {
+  return async (dispatch, getState, { logger: { log, mongoLogId } }) => {
+    const {
+      fileName,
+      delimiter,
+      newline,
+      ignoreBlanks,
+      analyzeAbortController,
+    } = getState().import;
+
+    // if there's already an analyzeCSVFields in flight, abort that first
+    if (analyzeAbortController) {
+      analyzeAbortController.abort();
+      dispatch(skipCSVAnalyze());
+    }
+
+    const abortController = new AbortController();
+    const fileSize = file.size
+    dispatch({
+      type: ANALYZE_STARTED,
+      abortController,
+      analyzeBytesTotal: fileSize,
+    });
+
+    try {
+
+      const formData = new FormData()
+      formData.append("file", file);
+      formData.append("json", JSON.stringify({
+        delimiter, newline, ignoreEmptyStrings: ignoreBlanks
+      }))
+
+      const resp = await fetch("/analyze-csv-fields", {
+        method: "POST",
+        body: formData
+      })
+
+
+      const result = await resp.json();
+      // const result = await analyzeCSVFields({
+      //   input,
+      //   delimiter,
+      //   newline,
+      //   ignoreEmptyStrings: ignoreBlanks,
+      //   progressCallback,
+      // });
+
+      for (const csvField of fields) {
+        csvField.type = result.fields[csvField.path].detected;
+
+        csvField.result = result.fields[csvField.path];
+      }
+
+      dispatch({
+        type: SET_PREVIEW,
+        fields,
+        values,
+      });
+
+      dispatch({
+        type: ANALYZE_FINISHED,
+        result,
+      });
+    } catch (err) {
+      log.error(
+        mongoLogId(1_001_000_180),
+        'Import',
+        'Failed to analyze CSV fields',
+        err
+      );
+      dispatch({
+        type: ANALYZE_FAILED,
+        error: err,
+      });
+    }
+  };
+};
+
+
 export const selectImportFile = (
   file: File
 ): ImportThunkAction<Promise<void>> => {
@@ -56,6 +231,7 @@ export const selectImportFile = (
         method: "POST",
         body: formData
       })
+
       const detected = await resp.json()
       if (detected.type === 'unknown') {
         throw new Error('Cannot determine the file type');
@@ -78,8 +254,7 @@ export const selectImportFile = (
       // We only ever display preview rows for CSV files underneath the field
       // type selects
       if (detected.type === 'csv') {
-        throw new Error('CSV not supported');
-        //await dispatch(loadCSVPreviewDocs());
+        await dispatch(loadCSVPreviewDocs(file));
       }
     } catch (err: any) {
       log.info(
