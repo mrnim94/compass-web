@@ -111,8 +111,8 @@ importers:
         specifier: ^3.0.2
         version: 3.0.2
       mongodb-ns:
-        specifier: ^2.4.2
-        version: 2.4.2
+        specifier: file:./vendors/mongodb-ns
+        version: file:vendors/mongodb-ns
       mongodb-schema:
         specifier: ^12.5.2
         version: 12.6.2
@@ -1618,6 +1618,9 @@ packages:
 
   mongodb-ns@2.4.2:
     resolution: {integrity: sha512-gYJjEYG4v4a1WSXgUf81OBoBRlj+Z1SlnQVO392fC/4a1CN7CLWDITajZWPFTPh/yRozYk6sHHtZwZmQhodBEA==}
+
+  mongodb-ns@file:vendors/mongodb-ns:
+    resolution: {directory: vendors/mongodb-ns, type: directory}
 
   mongodb-schema@12.6.2:
     resolution: {integrity: sha512-uKjkTAx6MqJi0Xj0aeYRjvYr3O7LrUQgXH1c0WQCOByPoYbNG9RAhWoc4IwriIqTHyBw1RJn0C/p7DISOPYpMg==}
@@ -3857,7 +3860,10 @@ snapshots:
       '@types/whatwg-url': 11.0.5
       whatwg-url: 13.0.0
 
-  mongodb-ns@2.4.2: {}
+  mongodb-ns@2.4.2:
+    optional: true
+
+  mongodb-ns@file:vendors/mongodb-ns: {}
 
   mongodb-schema@12.6.2:
     dependencies:

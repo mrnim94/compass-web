@@ -5,6 +5,7 @@ const path = require('path');
 const net = require('net');
 const tls = require('tls');
 const crypto = require('crypto');
+const fs = require('fs');
 const { Writable } = require('stream');
 const fastify = require('fastify')({
   logger: true,
@@ -33,7 +34,14 @@ const {
 const {
   importJSON,
 } = require('./dist/compass-import-export/import/import-json');
+const {
+  guessFileType,
+} = require('./dist/compass-import-export/import/guess-filetype');
 const { importCSV } = require('./dist/compass-import-export/import/import-csv');
+const {
+  listCSVFields,
+} = require('./dist/compass-import-export/import/list-csv-fields');
+
 const {
   analyzeCSVFields,
 } = require('./dist/compass-import-export/import/analyze-csv-fields');
@@ -224,6 +232,8 @@ fastify.register(async (fastify) => {
     }
   );
 });
+
+fastify.register(require('@fastify/multipart'));
 
 if (basicAuth) {
   fastify.register(require('@fastify/basic-auth'), {
@@ -425,6 +435,151 @@ fastify.after(() => {
       docsProcessed: res.docsProcessed,
       paths: res.paths,
     });
+  });
+
+  fastify.post('/guess-filetype', async (request, reply) => {
+    const file = await request.file();
+
+    if (!file) {
+      reply.status(400).send({ error: 'No file' });
+    }
+
+    const res = await guessFileType({
+      input: file.file,
+    });
+
+    reply.send(res);
+  });
+
+  fastify.post('/upload-json', async (request, reply) => {
+    const file = await request.file();
+
+    if (!file) {
+      reply.status(400).send({ error: 'No file' });
+    }
+
+    const rawJson = file.fields.json?.value;
+    if (!rawJson) {
+      reply.status(400).send({ error: 'No json body' });
+    }
+
+    const body = JSON.parse(rawJson);
+
+    const mongoService = body.connectionId
+      ? mongoServices[body.connectionId]
+      : null;
+    if (!mongoService) {
+      reply.status(400).send({ error: 'connection id not found' });
+    }
+
+    try {
+      const res = await importJSON({
+        dataService: mongoService,
+        ns: body.ns,
+        jsonVariant: body.jsonVariant,
+        input: file.file,
+        stopOnErrors: body.stopOnErrors,
+      });
+
+      reply.send(res);
+    } catch (err) {
+      console.error(err);
+      reply.status(502).send({ error: err.message ?? 'Unknown error' });
+    }
+  });
+
+  fastify.post('/upload-csv', async (request, reply) => {
+    const file = await request.file();
+
+    if (!file) {
+      reply.status(400).send({ error: 'No file' });
+    }
+
+    const rawJson = file.fields.json?.value;
+    if (!rawJson) {
+      reply.status(400).send({ error: 'No json body' });
+    }
+
+    const body = JSON.parse(rawJson);
+
+    const mongoService = body.connectionId
+      ? mongoServices[body.connectionId]
+      : null;
+    if (!mongoService) {
+      reply.status(400).send({ error: 'connection id not found' });
+    }
+
+    try {
+      const res = await importCSV({
+        dataService: mongoService,
+        ns: body.ns,
+        delimiter: body.delimiter,
+        fields: body.delimiter,
+        input: file.file,
+      });
+
+      reply.send(res);
+    } catch (err) {
+      console.error(err);
+      reply.status(502).send({ error: err.message ?? 'Unknown error' });
+    }
+  });
+
+  fastify.post('/list-csv-fields', async (request, reply) => {
+    const file = await request.file();
+
+    if (!file) {
+      reply.status(400).send({ error: 'No file' });
+    }
+
+    const rawJson = file.fields.json?.value;
+    if (!rawJson) {
+      reply.status(400).send({ error: 'No json body' });
+    }
+
+    const body = JSON.parse(rawJson);
+
+    try {
+      const res = await listCSVFields({
+        newline: body.newline,
+        delimiter: body.delimiter,
+        input: file.file,
+      });
+
+      reply.send(res);
+    } catch (err) {
+      console.error(err);
+      reply.status(502).send({ error: err.message ?? 'Unknown error' });
+    }
+  });
+
+  fastify.post('/analyze-csv-fields', async (request, reply) => {
+    const file = await request.file();
+
+    if (!file) {
+      reply.status(400).send({ error: 'No file' });
+    }
+
+    const rawJson = file.fields.json?.value;
+    if (!rawJson) {
+      reply.status(400).send({ error: 'No json body' });
+    }
+
+    const body = JSON.parse(rawJson);
+
+    try {
+      const res = await analyzeCSVFields({
+        newline: body.newline,
+        delimiter: body.delimiter,
+        input: file.file,
+        ignoreEmptyStrings: body.ignoreEmptyStrings,
+      });
+
+      reply.send(res);
+    } catch (err) {
+      console.error(err);
+      reply.status(502).send({ error: err.message ?? 'Unknown error' });
+    }
   });
 
   fastify.setNotFoundHandler((request, reply) => {

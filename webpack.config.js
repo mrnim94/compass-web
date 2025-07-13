@@ -109,6 +109,11 @@ module.exports = (env, args) => {
         fs: localPolyfill('fs'),
         stream: resolveFromCompass('readable-stream'),
       },
+      fallback: {
+        '@leafygreen-ui/emotion': resolveFromCompass('@leafygreen-ui/emotion'),
+        '@leafygreen-ui/palette': resolveFromCompass('@leafygreen-ui/palette'),
+        '@leafygreen-ui/tokens': resolveFromCompass('@leafygreen-ui/tokens'),
+      },
     },
     performance: {
       hints: 'warning',

@@ -1,6 +1,6 @@
 import React from 'react';
 import { registerHadronPlugin } from 'hadron-app-registry';
-import { activatePlugin as activateExportPlugin } from '../../compass/packages/compass-import-export/src/stores/export-store';
+import { activatePlugin } from '../../compass/packages/compass-import-export/src/stores/export-store';
 import { preferencesLocator } from '../../compass/packages/compass-preferences-model/provider';
 import { createLoggerLocator } from '@mongodb-js/compass-logging/provider';
 import { telemetryLocator } from '@mongodb-js/compass-telemetry/provider';
@@ -8,7 +8,7 @@ import { connectionsLocator } from '@mongodb-js/compass-connections/provider';
 import { ExportModal } from './export-modal';
 import ExportInProgressModal from '../../compass/packages/compass-import-export/src/components/export-in-progress-modal';
 
-function ExportPluginComponent() {
+function ExportComponent() {
   return (
     <>
       <ExportModal />
@@ -17,11 +17,12 @@ function ExportPluginComponent() {
   );
 }
 
+// @ts-ignore
 export const ExportPlugin = registerHadronPlugin(
   {
     name: 'Export',
-    component: ExportPluginComponent,
-    activate: activateExportPlugin,
+    component: ExportComponent,
+    activate: activatePlugin,
   },
   {
     connections: connectionsLocator,

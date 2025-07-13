@@ -15,7 +15,12 @@ import {
   DatabasesWorkspaceTab,
   CollectionsWorkspaceTab,
 } from '@mongodb-js/compass-databases-collections';
-import { CompassComponentsProvider, css } from '@mongodb-js/compass-components';
+import {
+  CompassComponentsProvider,
+  FileInputBackendProvider,
+  css,
+} from '@mongodb-js/compass-components';
+import { type FileInputBackend } from '../../compass/packages/compass-components/src/components/file-input';
 import {
   WorkspaceTab as CollectionWorkspace,
   CollectionTabsProvider,
@@ -38,6 +43,7 @@ import { CompassGenerativeAIPlugin } from '@mongodb-js/compass-generative-ai';
 import ExplainPlanCollectionTabModal from '@mongodb-js/compass-explain-plan';
 import ExportToLanguageCollectionTabModal from '@mongodb-js/compass-export-to-language';
 import { ExportPlugin } from './export-plugin';
+import { ImportPlugin } from './import-plugin';
 import {
   CreateNamespacePlugin,
   DropNamespacePlugin,
@@ -161,6 +167,7 @@ function CompassWorkspace({
                   <DropNamespacePlugin></DropNamespacePlugin>
                   <RenameCollectionPlugin></RenameCollectionPlugin>
                   <ExportPlugin></ExportPlugin>
+                  <ImportPlugin></ImportPlugin>
                 </>
               );
             }}
@@ -314,6 +321,20 @@ const CompassWeb = ({
                       orgId={orgId}
                       projectId={projectId}
                     >
+                      {/* <FileInputBackendProvider
+                        createFileInputBackend={() => ({
+                          openFileChooser: (options) => {
+                            console.log('openFileChooser');
+                          },
+                          onFilesChosen: (listener) => {
+                            console.log('onFilesChosen');
+                            return () => {};
+                          },
+                          getPathForFile: (file) => {
+                            return file.path;
+                          },
+                        })}
+                      > */}
                       <CompassConnections
                         appName={appName ?? 'Compass Web'}
                         onFailToLoadConnections={onFailToLoadConnections}
@@ -365,6 +386,7 @@ const CompassWeb = ({
                           <CompassGenerativeAIPlugin projectId={projectId} />
                         </CompassInstanceStorePlugin>
                       </CompassConnections>
+                      {/* </FileInputBackendProvider> */}
                     </AtlasCloudConnectionStorageProvider>
                   </DataModelStorageServiceProviderInMemory>
                 </WithAtlasProviders>

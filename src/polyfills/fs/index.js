@@ -1,17 +1,21 @@
 export function rmSync() {
-  throw new Error('Not supported in browser');
+  throw new Error('Not supported in browser: rmSync');
 }
 
 export function readFileSync() {
-  throw new Error('Not supported in browser');
+  throw new Error('Not supported in browser: readFileSync');
 }
 
-export function stat() {
-  throw new Error('Not supported in browser');
+export function stat(path, cb) {
+  setTimeout(() => {
+    cb(null, {});
+  }, 0);
 }
 
-export function exists() {
-  throw new Error('Not supported in browser');
+export function exists(path, cb) {
+  setTimeout(() => {
+    cb(null, true);
+  }, 0);
 }
 
 export const promises = {
@@ -20,11 +24,13 @@ export const promises = {
   },
 
   access() {
-    return Promise.reject(new Error('Not supported in browser environment'));
+    return Promise.resolve();
   },
 
   readFile() {
-    return Promise.reject(new Error('Not supported in browser environment'));
+    return Promise.reject(
+      new Error('Not supported in browser environment: readFile')
+    );
   },
 };
 
