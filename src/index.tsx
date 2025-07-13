@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useLayoutEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { CompassWeb } from './components/compass-web';
 import {
@@ -16,6 +16,7 @@ interface ProjectParams {
   projectId: string;
   orgId: string;
   appName: string;
+  csrfToken: string;
 }
 
 const sandboxContainerStyles = css({
@@ -44,6 +45,18 @@ const initialPreferences: Partial<AllPreferences> = {
 
 resetGlobalCSS();
 
+function getMetaEl(name: string) {
+  return (
+    document.querySelector(`meta[name="${name}" i]`) ??
+    (() => {
+      const el = document.createElement('meta');
+      el.setAttribute('name', name);
+      document.head.prepend(el);
+      return el;
+    })()
+  );
+}
+
 const App = () => {
   const [currentTab, updateCurrentTab] = useWorkspaceTabRouter();
   const [projectParams, setProjectParams] =
@@ -57,7 +70,7 @@ const App = () => {
         if (!projectId) {
           throw new Error('failed to get projectId');
         }
-        const { orgId, appName } = await fetch(
+        const { orgId, appName, csrfToken } = await fetch(
           `/cloud-mongodb-com/v2/${projectId}/params`
         ).then((res) => {
           return res.json();
@@ -66,6 +79,7 @@ const App = () => {
           projectId,
           orgId,
           appName,
+          csrfToken,
         });
       })
       .catch((err) => {
@@ -76,6 +90,13 @@ const App = () => {
         });
       });
   }, []);
+
+  useLayoutEffect(() => {
+    getMetaEl('csrf-token').setAttribute(
+      'content',
+      projectParams?.csrfToken ?? ''
+    );
+  }, [projectParams?.csrfToken]);
 
   return (
     <Body as="div" className={sandboxContainerStyles}>
