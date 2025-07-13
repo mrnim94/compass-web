@@ -171,7 +171,6 @@ fastify.register(require('@fastify/websocket'));
 fastify.register(require('@fastify/cookie'));
 
 fastify.register(require('@fastify/csrf-protection'), {
-  //cookieOpts: { signed: true },
   getToken: (req) => {
     return req.headers['csrf-token'];
   },
