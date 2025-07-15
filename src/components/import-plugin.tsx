@@ -1,13 +1,13 @@
 import React from 'react';
-import { registerHadronPlugin } from 'hadron-app-registry';
+import { registerHadronPlugin } from '../../compass/packages/hadron-app-registry';
 import ImportModal from './import-modal';
 import ImportInProgressModal from '../../compass/packages/compass-import-export/src/components/import-in-progress-modal';
 import { activatePlugin } from '../../compass/packages/compass-import-export/src/stores/import-store';
-import { preferencesLocator } from '../../compass/packages/compass-preferences-model/provider';
-import { createLoggerLocator } from '@mongodb-js/compass-logging/provider';
-import { telemetryLocator } from '@mongodb-js/compass-telemetry/provider';
-import { connectionsLocator } from '@mongodb-js/compass-connections/provider';
-import { workspacesServiceLocator } from '../../compass/packages/compass-workspaces/provider';
+import { preferencesLocator } from '../../compass/packages/compass-preferences-model/src/provider';
+import { createLoggerLocator } from '../../compass/packages/compass-logging/src/provider';
+import { telemetryLocator } from '../../compass/packages/compass-telemetry/src/provider';
+import { connectionsLocator } from '../../compass/packages/compass-connections/src/provider';
+import { workspacesServiceLocator } from '../../compass/packages/compass-workspaces/src/provider';
 
 function ImportComponent() {
   return (

@@ -8,7 +8,7 @@ import {
   Option,
   css,
   spacing,
-} from '@mongodb-js/compass-components';
+} from '../../compass/packages/compass-components';
 
 import type { AcceptedFileType } from '../../compass/packages/compass-import-export/src/constants/file-types';
 import type { Delimiter } from '../../compass/packages/compass-import-export/src/csv/csv-types';
@@ -46,23 +46,23 @@ const delimiters: {
   value: Delimiter;
   label: string;
 }[] = [
-    {
-      value: ',',
-      label: 'Comma',
-    },
-    {
-      value: '\t',
-      label: 'Tab',
-    },
-    {
-      value: ';',
-      label: 'Semicolon',
-    },
-    {
-      value: ' ',
-      label: 'Space',
-    },
-  ];
+  {
+    value: ',',
+    label: 'Comma',
+  },
+  {
+    value: '\t',
+    label: 'Tab',
+  },
+  {
+    value: ';',
+    label: 'Semicolon',
+  },
+  {
+    value: ' ',
+    label: 'Space',
+  },
+];
 
 type ImportOptionsProps = {
   selectImportFile: (file: File) => void;

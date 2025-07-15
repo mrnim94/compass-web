@@ -24,7 +24,7 @@ import {
   css,
   spacing,
   Label,
-} from '@mongodb-js/compass-components';
+} from '../../compass/packages/compass-components';
 import { connect } from 'react-redux';
 
 import { selectFieldsToExport } from '../export';
