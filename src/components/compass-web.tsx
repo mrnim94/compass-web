@@ -15,12 +15,7 @@ import {
   DatabasesWorkspaceTab,
   CollectionsWorkspaceTab,
 } from '@mongodb-js/compass-databases-collections';
-import {
-  CompassComponentsProvider,
-  FileInputBackendProvider,
-  css,
-} from '@mongodb-js/compass-components';
-import { type FileInputBackend } from '../../compass/packages/compass-components/src/components/file-input';
+import { CompassComponentsProvider, css } from '@mongodb-js/compass-components';
 import {
   WorkspaceTab as CollectionWorkspace,
   CollectionTabsProvider,
@@ -321,20 +316,6 @@ const CompassWeb = ({
                       orgId={orgId}
                       projectId={projectId}
                     >
-                      {/* <FileInputBackendProvider
-                        createFileInputBackend={() => ({
-                          openFileChooser: (options) => {
-                            console.log('openFileChooser');
-                          },
-                          onFilesChosen: (listener) => {
-                            console.log('onFilesChosen');
-                            return () => {};
-                          },
-                          getPathForFile: (file) => {
-                            return file.path;
-                          },
-                        })}
-                      > */}
                       <CompassConnections
                         appName={appName ?? 'Compass Web'}
                         onFailToLoadConnections={onFailToLoadConnections}
@@ -386,7 +367,6 @@ const CompassWeb = ({
                           <CompassGenerativeAIPlugin projectId={projectId} />
                         </CompassInstanceStorePlugin>
                       </CompassConnections>
-                      {/* </FileInputBackendProvider> */}
                     </AtlasCloudConnectionStorageProvider>
                   </DataModelStorageServiceProviderInMemory>
                 </WithAtlasProviders>

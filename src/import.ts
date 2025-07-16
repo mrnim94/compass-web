@@ -58,12 +58,16 @@ const loadCSVPreviewDocs = (file: File): ImportThunkAction<Promise<void>> => {
     try {
 
       const formData = new FormData()
-      formData.append("file", file);
-      formData.append("json", JSON.stringify({ delimiter, newline }))
+      formData.append('file', file);
+      formData.append('json', JSON.stringify({ delimiter, newline }))
 
       let resp = await fetch("/list-csv-fields", {
-        method: "POST",
-        body: formData
+        method: 'POST',
+        body: formData,
+        headers: {
+          // @ts-ignore
+          'csrf-token': document.querySelector('meta[name="csrf-token" i]')?.content ?? ''
+        }
       })
 
       // const result = await listCSVFields({ input, delimiter, newline });
@@ -165,14 +169,18 @@ const loadTypes = (
     try {
 
       const formData = new FormData()
-      formData.append("file", file);
-      formData.append("json", JSON.stringify({
+      formData.append('file', file);
+      formData.append('json', JSON.stringify({
         delimiter, newline, ignoreEmptyStrings: ignoreBlanks
       }))
 
       const resp = await fetch("/analyze-csv-fields", {
         method: "POST",
-        body: formData
+        body: formData,
+        headers: {
+          // @ts-ignore
+          'csrf-token': document.querySelector('meta[name="csrf-token" i]')?.content ?? ''
+        }
       })
 
 
@@ -225,11 +233,15 @@ export const selectImportFile = (
       // const detected = await guessFileType({ input });
       // guess file type
       const formData = new FormData()
-      formData.append("file", file);
+      formData.append('file', file);
 
-      const resp = await fetch("/guess-filetype", {
-        method: "POST",
-        body: formData
+      const resp = await fetch('/guess-filetype', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          // @ts-ignore
+          'csrf-token': document.querySelector('meta[name="csrf-token" i]')?.content ?? ''
+        }
       })
 
       const detected = await resp.json()
@@ -382,7 +394,11 @@ export const startImport = (file: File): ImportThunkAction<Promise<void>> => {
 
         const resp = await fetch('/upload-csv', {
           method: 'POST',
-          body: formData
+          body: formData,
+          headers: {
+            // @ts-ignore
+            'csrf-token': document.querySelector('meta[name="csrf-token" i]')?.content ?? ''
+          }
         });
 
         result = await resp.json()
@@ -396,7 +412,11 @@ export const startImport = (file: File): ImportThunkAction<Promise<void>> => {
         }))
         const resp = await fetch('/upload-json', {
           method: 'POST',
-          body: formData
+          body: formData,
+          headers: {
+            // @ts-ignore
+            'csrf-token': document.querySelector('meta[name="csrf-token" i]')?.content ?? ''
+          }
         });
 
         result = await resp.json()

@@ -5,11 +5,11 @@ const path = require('path');
 const net = require('net');
 const tls = require('tls');
 const crypto = require('crypto');
-const fs = require('fs');
 const { Writable } = require('stream');
 const fastify = require('fastify')({
   logger: true,
 });
+const { Eta } = require('eta');
 const yargs = require('yargs');
 const { hideBin } = require('yargs/helpers');
 const { ConnectionString } = require('mongodb-connection-string-url');
@@ -157,7 +157,22 @@ fastify.register(require('@fastify/static'), {
   root: path.join(__dirname, 'dist'),
 });
 
+fastify.register(require('@fastify/view'), {
+  engine: {
+    eta: new Eta(),
+  },
+});
+
 fastify.register(require('@fastify/websocket'));
+
+fastify.register(require('@fastify/cookie'));
+
+fastify.register(require('@fastify/csrf-protection'), {
+  getToken: (req) => {
+    return req.headers['csrf-token'];
+  },
+  sessionPlugin: '@fastify/cookie',
+});
 
 // Websocket proxy for MongoDB connections
 fastify.register(async (fastify) => {
@@ -299,16 +314,20 @@ fastify.after(() => {
     }
   );
 
-  fastify.post('/export-csv', (request, reply) => {
-    // TODO: validate
-    const exportId = crypto.randomBytes(8).toString('hex');
-    exportIds.set(exportId, {
-      ...request.body,
-      type: 'csv',
-    });
+  fastify.post(
+    '/export-csv',
+    { preHandler: fastify.csrfProtection },
+    (request, reply) => {
+      // TODO: validate
+      const exportId = crypto.randomBytes(8).toString('hex');
+      exportIds.set(exportId, {
+        ...request.body,
+        type: 'csv',
+      });
 
-    reply.send(exportId);
-  });
+      reply.send(exportId);
+    }
+  );
 
   fastify.post('/export-json', (request, reply) => {
     // TODO: validate
@@ -437,153 +456,174 @@ fastify.after(() => {
     });
   });
 
-  fastify.post('/guess-filetype', async (request, reply) => {
-    const file = await request.file();
+  fastify.post(
+    '/guess-filetype',
+    { onRequest: fastify.csrfProtection },
+    async (request, reply) => {
+      const file = await request.file();
 
-    if (!file) {
-      reply.status(400).send({ error: 'No file' });
-    }
+      if (!file) {
+        reply.status(400).send({ error: 'No file' });
+      }
 
-    const res = await guessFileType({
-      input: file.file,
-    });
-
-    reply.send(res);
-  });
-
-  fastify.post('/upload-json', async (request, reply) => {
-    const file = await request.file();
-
-    if (!file) {
-      reply.status(400).send({ error: 'No file' });
-    }
-
-    const rawJson = file.fields.json?.value;
-    if (!rawJson) {
-      reply.status(400).send({ error: 'No json body' });
-    }
-
-    const body = JSON.parse(rawJson);
-
-    const mongoService = body.connectionId
-      ? mongoServices[body.connectionId]
-      : null;
-    if (!mongoService) {
-      reply.status(400).send({ error: 'connection id not found' });
-    }
-
-    try {
-      const res = await importJSON({
-        dataService: mongoService,
-        ns: body.ns,
-        jsonVariant: body.jsonVariant,
-        input: file.file,
-        stopOnErrors: body.stopOnErrors,
-      });
-
-      reply.send(res);
-    } catch (err) {
-      console.error(err);
-      reply.status(502).send({ error: err.message ?? 'Unknown error' });
-    }
-  });
-
-  fastify.post('/upload-csv', async (request, reply) => {
-    const file = await request.file();
-
-    if (!file) {
-      reply.status(400).send({ error: 'No file' });
-    }
-
-    const rawJson = file.fields.json?.value;
-    if (!rawJson) {
-      reply.status(400).send({ error: 'No json body' });
-    }
-
-    const body = JSON.parse(rawJson);
-
-    const mongoService = body.connectionId
-      ? mongoServices[body.connectionId]
-      : null;
-    if (!mongoService) {
-      reply.status(400).send({ error: 'connection id not found' });
-    }
-
-    try {
-      const res = await importCSV({
-        dataService: mongoService,
-        ns: body.ns,
-        delimiter: body.delimiter,
-        fields: body.delimiter,
+      const res = await guessFileType({
         input: file.file,
       });
 
       reply.send(res);
-    } catch (err) {
-      console.error(err);
-      reply.status(502).send({ error: err.message ?? 'Unknown error' });
     }
-  });
+  );
 
-  fastify.post('/list-csv-fields', async (request, reply) => {
-    const file = await request.file();
+  fastify.post(
+    '/upload-json',
+    { preHandler: fastify.csrfProtection },
+    async (request, reply) => {
+      const file = await request.file();
 
-    if (!file) {
-      reply.status(400).send({ error: 'No file' });
+      if (!file) {
+        reply.status(400).send({ error: 'No file' });
+      }
+
+      const rawJson = file.fields.json?.value;
+      if (!rawJson) {
+        reply.status(400).send({ error: 'No json body' });
+      }
+
+      const body = JSON.parse(rawJson);
+
+      const mongoService = body.connectionId
+        ? mongoServices[body.connectionId]
+        : null;
+      if (!mongoService) {
+        reply.status(400).send({ error: 'connection id not found' });
+      }
+
+      try {
+        const res = await importJSON({
+          dataService: mongoService,
+          ns: body.ns,
+          jsonVariant: body.jsonVariant,
+          input: file.file,
+          stopOnErrors: body.stopOnErrors,
+        });
+
+        reply.send(res);
+      } catch (err) {
+        console.error(err);
+        reply.status(502).send({ error: err.message ?? 'Unknown error' });
+      }
     }
+  );
 
-    const rawJson = file.fields.json?.value;
-    if (!rawJson) {
-      reply.status(400).send({ error: 'No json body' });
+  fastify.post(
+    '/upload-csv',
+    { preHandler: fastify.csrfProtection },
+    async (request, reply) => {
+      const file = await request.file();
+
+      if (!file) {
+        reply.status(400).send({ error: 'No file' });
+      }
+
+      const rawJson = file.fields.json?.value;
+      if (!rawJson) {
+        reply.status(400).send({ error: 'No json body' });
+      }
+
+      const body = JSON.parse(rawJson);
+
+      const mongoService = body.connectionId
+        ? mongoServices[body.connectionId]
+        : null;
+      if (!mongoService) {
+        reply.status(400).send({ error: 'connection id not found' });
+      }
+
+      try {
+        const res = await importCSV({
+          dataService: mongoService,
+          ns: body.ns,
+          delimiter: body.delimiter,
+          fields: body.delimiter,
+          input: file.file,
+        });
+
+        reply.send(res);
+      } catch (err) {
+        console.error(err);
+        reply.status(502).send({ error: err.message ?? 'Unknown error' });
+      }
     }
+  );
 
-    const body = JSON.parse(rawJson);
+  fastify.post(
+    '/list-csv-fields',
+    { preHandler: fastify.csrfProtection },
+    async (request, reply) => {
+      const file = await request.file();
 
-    try {
-      const res = await listCSVFields({
-        newline: body.newline,
-        delimiter: body.delimiter,
-        input: file.file,
-      });
+      if (!file) {
+        reply.status(400).send({ error: 'No file' });
+      }
 
-      reply.send(res);
-    } catch (err) {
-      console.error(err);
-      reply.status(502).send({ error: err.message ?? 'Unknown error' });
+      const rawJson = file.fields.json?.value;
+      if (!rawJson) {
+        reply.status(400).send({ error: 'No json body' });
+      }
+
+      const body = JSON.parse(rawJson);
+
+      try {
+        const res = await listCSVFields({
+          newline: body.newline,
+          delimiter: body.delimiter,
+          input: file.file,
+        });
+
+        reply.send(res);
+      } catch (err) {
+        console.error(err);
+        reply.status(502).send({ error: err.message ?? 'Unknown error' });
+      }
     }
-  });
+  );
 
-  fastify.post('/analyze-csv-fields', async (request, reply) => {
-    const file = await request.file();
+  fastify.post(
+    '/analyze-csv-fields',
+    { preHandler: fastify.csrfProtection },
+    async (request, reply) => {
+      const file = await request.file();
 
-    if (!file) {
-      reply.status(400).send({ error: 'No file' });
+      if (!file) {
+        reply.status(400).send({ error: 'No file' });
+      }
+
+      const rawJson = file.fields.json?.value;
+      if (!rawJson) {
+        reply.status(400).send({ error: 'No json body' });
+      }
+
+      const body = JSON.parse(rawJson);
+
+      try {
+        const res = await analyzeCSVFields({
+          newline: body.newline,
+          delimiter: body.delimiter,
+          input: file.file,
+          ignoreEmptyStrings: body.ignoreEmptyStrings,
+        });
+
+        reply.send(res);
+      } catch (err) {
+        console.error(err);
+        reply.status(502).send({ error: err.message ?? 'Unknown error' });
+      }
     }
-
-    const rawJson = file.fields.json?.value;
-    if (!rawJson) {
-      reply.status(400).send({ error: 'No json body' });
-    }
-
-    const body = JSON.parse(rawJson);
-
-    try {
-      const res = await analyzeCSVFields({
-        newline: body.newline,
-        delimiter: body.delimiter,
-        input: file.file,
-        ignoreEmptyStrings: body.ignoreEmptyStrings,
-      });
-
-      reply.send(res);
-    } catch (err) {
-      console.error(err);
-      reply.status(502).send({ error: err.message ?? 'Unknown error' });
-    }
-  });
+  );
 
   fastify.setNotFoundHandler((request, reply) => {
-    reply.sendFile('index.html');
+    const csrfToken = reply.generateCsrf();
+    reply.view('dist/index.eta', { csrfToken });
   });
 });
 
