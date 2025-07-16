@@ -268,6 +268,14 @@ fastify.after(() => {
     fastify.addHook('onRequest', fastify.basicAuth);
   }
 
+  fastify.get('/version', (request, reply) => {
+    const pkgJson = require('./package.json');
+    reply.send({
+      version: pkgJson.version,
+      source: `https://github.com/haohanyang/compass-web/tree/v${pkgJson.version}`,
+    });
+  });
+
   fastify.get('/projectId', (request, reply) => {
     reply.type('text/plain').send(args.projectId);
   });
