@@ -340,16 +340,6 @@ fastify.after(() => {
     reply.send(exportId);
   });
 
-  // TODO: internal
-  fastify.get('/exports', (request, reply) => {
-    const data = {};
-    exportIds.keys().forEach((key) => {
-      data[key] = exportIds.get(key);
-    });
-
-    reply.send(data);
-  });
-
   fastify.get('/export/:exportId', async (request, reply) => {
     const exportId = request.params.exportId;
     const exportOptions = exportIds.get(exportId);
