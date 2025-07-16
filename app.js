@@ -9,6 +9,7 @@ const { Writable } = require('stream');
 const fastify = require('fastify')({
   logger: true,
 });
+const { Eta } = require('eta');
 const yargs = require('yargs');
 const { hideBin } = require('yargs/helpers');
 const { ConnectionString } = require('mongodb-connection-string-url');
@@ -94,10 +95,6 @@ const args = yargs(hideBin(process.argv))
     description: 'Name of the application',
     default: 'Compass Web',
   })
-  .option('cookie-secret', {
-    type: 'string',
-    description: 'Cookie secret',
-  })
   .parse();
 
 let mongoURIStrings = args.mongoUri.trim().split(/\s+/);
@@ -156,14 +153,14 @@ let shuttingDown = false;
 
 const exportIds = new NodeCache({ stdTTL: 3600 });
 
-const cookieSecret = args.cookieSecret
-  ? args.cookieSecret
-  : crypto.randomBytes(16).toString('hex');
-
-let csrfToken;
-
 fastify.register(require('@fastify/static'), {
   root: path.join(__dirname, 'dist'),
+});
+
+fastify.register(require('@fastify/view'), {
+  engine: {
+    eta: new Eta(),
+  },
 });
 
 fastify.register(require('@fastify/websocket'));
@@ -281,7 +278,6 @@ fastify.after(() => {
         orgId: args.orgId,
         projectId: args.projectId,
         appName: args.appName,
-        csrfToken,
       });
     } else {
       reply.status(404).send({
@@ -626,8 +622,8 @@ fastify.after(() => {
   );
 
   fastify.setNotFoundHandler((request, reply) => {
-    csrfToken = reply.generateCsrf();
-    reply.sendFile('index.html');
+    const csrfToken = reply.generateCsrf();
+    reply.view('dist/index.eta', { csrfToken });
   });
 });
 
