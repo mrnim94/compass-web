@@ -613,7 +613,7 @@ fastify.after(() => {
 
   fastify.setNotFoundHandler((request, reply) => {
     const csrfToken = reply.generateCsrf();
-    reply.view('dist/index.eta', { csrfToken });
+    reply.view('dist/index.eta', { csrfToken, appName: args.appName });
   });
 });
 
