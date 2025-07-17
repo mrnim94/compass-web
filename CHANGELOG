@@ -1,3 +1,13 @@
+## 0.2.3 - 2025-07-17
+
+### Added
+
+- Support "Add Data" function.
+
+### Changed
+
+- CSRF protection added to improve security.
+
 ## 0.2.2 - 2025-07-10
 
 ### Added
