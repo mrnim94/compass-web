@@ -161,6 +161,7 @@ fastify.register(require('@fastify/view'), {
   engine: {
     eta: new Eta(),
   },
+  root: path.join(__dirname, 'dist'),
 });
 
 fastify.register(require('@fastify/websocket'));
@@ -621,7 +622,7 @@ fastify.after(() => {
 
   fastify.setNotFoundHandler((request, reply) => {
     const csrfToken = reply.generateCsrf();
-    reply.view('dist/index.eta', { csrfToken, appName: args.appName });
+    reply.view('index.eta', { csrfToken, appName: args.appName });
   });
 });
 
