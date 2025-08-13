@@ -206,10 +206,35 @@ fastify.register(async (fastify) => {
             connectOptions.port
           );
           mongoSocket = useSecureConnection
-            ? tls.connect({
-                servername: connectOptions.host,
-                ...connectOptions,
-              })
+            ? (() => {
+                const tlsOptions = {
+                  servername: connectOptions.host,
+                  // Ensure TLS 1.2+ for services like AWS DocDB
+                  minVersion: 'TLSv1.2',
+                  ...connectOptions,
+                };
+
+                const isTrue = (v) => v === true || v === 'true' || v === 1 || v === '1';
+                const isFalse = (v) => v === false || v === 'false' || v === 0 || v === '0';
+
+                // Honor insecure TLS flags coming from the client connection options
+                // Mongo connection strings often use `tlsInsecure=true` to skip CA validation
+                const wantInsecure =
+                  isTrue(connectOptions.tlsInsecure) ||
+                  isTrue(connectOptions.tlsAllowInvalidCertificates) ||
+                  isFalse(connectOptions.rejectUnauthorized);
+
+                if (wantInsecure) {
+                  tlsOptions.rejectUnauthorized = false;
+                }
+
+                // Allow skipping hostname validation when requested or when tlsInsecure=true
+                if (wantInsecure || isTrue(connectOptions.tlsAllowInvalidHostnames)) {
+                  tlsOptions.checkServerIdentity = () => undefined;
+                }
+
+                return tls.connect(tlsOptions);
+              })()
             : net.createConnection(connectOptions);
           mongoSocket.setKeepAlive(true, 300000);
           mongoSocket.setTimeout(30000);
@@ -338,7 +363,7 @@ fastify.after(() => {
     }
   );
 
-  fastify.post('/export-json', (request, reply) => {
+  fastify.post('/export-json', { preHandler: fastify.csrfProtection }, (request, reply) => {
     // TODO: validate
     const exportId = crypto.randomBytes(8).toString('hex');
     exportIds.set(exportId, {
@@ -439,7 +464,7 @@ fastify.after(() => {
     const mongoService = connectionId ? mongoServices[connectionId] : null;
 
     if (!mongoService) {
-      reply.status(400).reply({ error: 'connection id not found' });
+      reply.status(400).send({ error: 'connection id not found' });
     }
 
     const res = await gatherFieldsFromQuery({
@@ -543,7 +568,7 @@ fastify.after(() => {
           dataService: mongoService,
           ns: body.ns,
           delimiter: body.delimiter,
-          fields: body.delimiter,
+          fields: body.fields,
           input: file.file,
         });
 
