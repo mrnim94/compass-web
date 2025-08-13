@@ -1,0 +1,41 @@
+FROM node:22
+
+# Install system dependencies required for building native modules and submodule bootstrap
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+    git \
+    python3 \
+    make \
+    g++ \
+  && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Enable corepack and use the exact pnpm version from package.json (packageManager)
+RUN corepack enable
+
+# Copy the entire repo (includes the compass submodule needed by bootstrap.sh)
+COPY . .
+
+# Normalize potential CRLF on Windows checkouts for bootstrap script
+RUN sed -i 's/\r$//' bootstrap.sh
+
+# Ensure submodule content is fetched (required for bootstrap.sh)
+RUN git config --global --add safe.directory /app \
+  && git submodule update --init --recursive --single-branch --depth 1
+
+# Install and build
+# - bootstrap compass submodule (uses npm ci and lerna)
+# - install root deps with pnpm (frozen lockfile)
+# - build frontend bundles
+RUN bash bootstrap.sh \
+  && pnpm install --frozen-lockfile \
+  && pnpm run build:production
+
+ENV NODE_ENV=production
+EXPOSE 8080
+
+# Run the server; provide CW_MONGO_URI at runtime
+CMD ["node", "app.js", "--host", "0.0.0.0"]
+
+
