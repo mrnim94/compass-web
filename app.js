@@ -219,10 +219,27 @@ fastify.register(async (fastify) => {
 
                 // Honor insecure TLS flags coming from the client connection options
                 // Mongo connection strings often use `tlsInsecure=true` to skip CA validation
-                const wantInsecure =
+                const wantInsecureFromClient =
                   isTrue(connectOptions.tlsInsecure) ||
                   isTrue(connectOptions.tlsAllowInvalidCertificates) ||
                   isFalse(connectOptions.rejectUnauthorized);
+
+                // Also honor insecure flags from the configured CW_MONGO_URI for this host
+                const wantInsecureFromServerConfig = mongoURIs.some(({ uri }) => {
+                  try {
+                    const hostMatches = (uri.hosts || []).some((h) => (h.split(':')[0] === connectOptions.host));
+                    if (!hostMatches) return false;
+                    const params = uri.searchParams;
+                    return (
+                      (params.get('tlsInsecure') === 'true') ||
+                      (params.get('tlsAllowInvalidCertificates') === 'true')
+                    );
+                  } catch (_e) {
+                    return false;
+                  }
+                });
+
+                const wantInsecure = wantInsecureFromClient || wantInsecureFromServerConfig;
 
                 if (wantInsecure) {
                   tlsOptions.rejectUnauthorized = false;
