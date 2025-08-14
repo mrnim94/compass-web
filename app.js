@@ -151,6 +151,21 @@ for (const { uri, id } of mongoURIs) {
 
 let shuttingDown = false;
 
+// If any configured connection string requests insecure TLS, apply it globally
+// to all proxy TLS sockets. This covers cases where the driver resolves hosts
+// different from the seed host in the URI (e.g., AWS DocumentDB replicas).
+const globalTLSInsecure = mongoURIs.some(({ uri }) => {
+  try {
+    const params = uri.searchParams;
+    return (
+      (params.get('tlsInsecure') === 'true') ||
+      (params.get('tlsAllowInvalidCertificates') === 'true')
+    );
+  } catch (_e) {
+    return false;
+  }
+});
+
 const exportIds = new NodeCache({ stdTTL: 3600 });
 
 fastify.register(require('@fastify/static'), {
@@ -239,7 +254,7 @@ fastify.register(async (fastify) => {
                   }
                 });
 
-                const wantInsecure = wantInsecureFromClient || wantInsecureFromServerConfig;
+                const wantInsecure = globalTLSInsecure || wantInsecureFromClient || wantInsecureFromServerConfig;
 
                 if (wantInsecure) {
                   tlsOptions.rejectUnauthorized = false;
@@ -248,6 +263,11 @@ fastify.register(async (fastify) => {
                 // Allow skipping hostname validation when requested or when tlsInsecure=true
                 if (wantInsecure || isTrue(connectOptions.tlsAllowInvalidHostnames)) {
                   tlsOptions.checkServerIdentity = () => undefined;
+                }
+
+                // Some environments (e.g., DocDB with TLS only) still require SNI
+                if (!tlsOptions.servername) {
+                  tlsOptions.servername = connectOptions.host;
                 }
 
                 return tls.connect(tlsOptions);
