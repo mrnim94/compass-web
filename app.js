@@ -98,6 +98,9 @@ const args = yargs(hideBin(process.argv))
   .parse();
 
 let mongoURIStrings = args.mongoUri.trim().split(/\s+/);
+/**
+ * @type {Array<{uri: ConnectionString, id: string}>}
+ */
 const mongoURIs = [];
 
 /**
@@ -158,8 +161,8 @@ const globalTLSInsecure = mongoURIs.some(({ uri }) => {
   try {
     const params = uri.searchParams;
     return (
-      (params.get('tlsInsecure') === 'true') ||
-      (params.get('tlsAllowInvalidCertificates') === 'true')
+      params.get('tlsInsecure') === 'true' ||
+      params.get('tlsAllowInvalidCertificates') === 'true'
     );
   } catch (_e) {
     return false;
@@ -211,6 +214,7 @@ fastify.register(async (fastify) => {
           mongoSocket.write(decodeMessageWithTypeByte(message), 'binary');
         } else {
           // First message before socket is created is with connection info
+          /** @type {import('mongodb').MongoClientOptions}*/
           const { tls: useSecureConnection, ...connectOptions } =
             decodeMessageWithTypeByte(message);
 
@@ -222,6 +226,7 @@ fastify.register(async (fastify) => {
           );
           mongoSocket = useSecureConnection
             ? (() => {
+                /**  @type {import('tls').ConnectionOptions} */
                 const tlsOptions = {
                   servername: connectOptions.host,
                   // Ensure TLS 1.2+ for services like AWS DocDB
@@ -229,8 +234,10 @@ fastify.register(async (fastify) => {
                   ...connectOptions,
                 };
 
-                const isTrue = (v) => v === true || v === 'true' || v === 1 || v === '1';
-                const isFalse = (v) => v === false || v === 'false' || v === 0 || v === '0';
+                const isTrue = (v) =>
+                  v === true || v === 'true' || v === 1 || v === '1';
+                const isFalse = (v) =>
+                  v === false || v === 'false' || v === 0 || v === '0';
 
                 // Honor insecure TLS flags coming from the client connection options
                 // Mongo connection strings often use `tlsInsecure=true` to skip CA validation
@@ -240,28 +247,38 @@ fastify.register(async (fastify) => {
                   isFalse(connectOptions.rejectUnauthorized);
 
                 // Also honor insecure flags from the configured CW_MONGO_URI for this host
-                const wantInsecureFromServerConfig = mongoURIs.some(({ uri }) => {
-                  try {
-                    const hostMatches = (uri.hosts || []).some((h) => (h.split(':')[0] === connectOptions.host));
-                    if (!hostMatches) return false;
-                    const params = uri.searchParams;
-                    return (
-                      (params.get('tlsInsecure') === 'true') ||
-                      (params.get('tlsAllowInvalidCertificates') === 'true')
-                    );
-                  } catch (_e) {
-                    return false;
+                const wantInsecureFromServerConfig = mongoURIs.some(
+                  ({ uri }) => {
+                    try {
+                      const hostMatches = (uri.hosts || []).some(
+                        (h) => h.split(':')[0] === connectOptions.host
+                      );
+                      if (!hostMatches) return false;
+                      const params = uri.searchParams;
+                      return (
+                        params.get('tlsInsecure') === 'true' ||
+                        params.get('tlsAllowInvalidCertificates') === 'true'
+                      );
+                    } catch (_e) {
+                      return false;
+                    }
                   }
-                });
+                );
 
-                const wantInsecure = globalTLSInsecure || wantInsecureFromClient || wantInsecureFromServerConfig;
+                const wantInsecure =
+                  globalTLSInsecure ||
+                  wantInsecureFromClient ||
+                  wantInsecureFromServerConfig;
 
                 if (wantInsecure) {
                   tlsOptions.rejectUnauthorized = false;
                 }
 
                 // Allow skipping hostname validation when requested or when tlsInsecure=true
-                if (wantInsecure || isTrue(connectOptions.tlsAllowInvalidHostnames)) {
+                if (
+                  wantInsecure ||
+                  isTrue(connectOptions.tlsAllowInvalidHostnames)
+                ) {
                   tlsOptions.checkServerIdentity = () => undefined;
                 }
 
@@ -400,16 +417,20 @@ fastify.after(() => {
     }
   );
 
-  fastify.post('/export-json', { preHandler: fastify.csrfProtection }, (request, reply) => {
-    // TODO: validate
-    const exportId = crypto.randomBytes(8).toString('hex');
-    exportIds.set(exportId, {
-      ...request.body,
-      type: 'json',
-    });
+  fastify.post(
+    '/export-json',
+    { preHandler: fastify.csrfProtection },
+    (request, reply) => {
+      // TODO: validate
+      const exportId = crypto.randomBytes(8).toString('hex');
+      exportIds.set(exportId, {
+        ...request.body,
+        type: 'json',
+      });
 
-    reply.send(exportId);
-  });
+      reply.send(exportId);
+    }
+  );
 
   fastify.get('/export/:exportId', async (request, reply) => {
     const exportId = request.params.exportId;
