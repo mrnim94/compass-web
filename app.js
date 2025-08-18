@@ -98,6 +98,9 @@ const args = yargs(hideBin(process.argv))
   .parse();
 
 let mongoURIStrings = args.mongoUri.trim().split(/\s+/);
+/**
+ * @type {Array<{uri: ConnectionString, id: string}>}
+ */
 const mongoURIs = [];
 
 /**
@@ -151,6 +154,21 @@ for (const { uri, id } of mongoURIs) {
 
 let shuttingDown = false;
 
+// If any configured connection string requests insecure TLS, apply it globally
+// to all proxy TLS sockets. This covers cases where the driver resolves hosts
+// different from the seed host in the URI (e.g., AWS DocumentDB replicas).
+const globalTLSInsecure = mongoURIs.some(({ uri }) => {
+  try {
+    const params = uri.searchParams;
+    return (
+      params.get('tlsInsecure') === 'true' ||
+      params.get('tlsAllowInvalidCertificates') === 'true'
+    );
+  } catch (_e) {
+    return false;
+  }
+});
+
 const exportIds = new NodeCache({ stdTTL: 3600 });
 
 fastify.register(require('@fastify/static'), {
@@ -196,6 +214,7 @@ fastify.register(async (fastify) => {
           mongoSocket.write(decodeMessageWithTypeByte(message), 'binary');
         } else {
           // First message before socket is created is with connection info
+          /** @type {import('mongodb').MongoClientOptions}*/
           const { tls: useSecureConnection, ...connectOptions } =
             decodeMessageWithTypeByte(message);
 
@@ -206,10 +225,70 @@ fastify.register(async (fastify) => {
             connectOptions.port
           );
           mongoSocket = useSecureConnection
-            ? tls.connect({
-                servername: connectOptions.host,
-                ...connectOptions,
-              })
+            ? (() => {
+                /**  @type {import('tls').ConnectionOptions} */
+                const tlsOptions = {
+                  servername: connectOptions.host,
+                  // Ensure TLS 1.2+ for services like AWS DocDB
+                  minVersion: 'TLSv1.2',
+                  ...connectOptions,
+                };
+
+                const isTrue = (v) =>
+                  v === true || v === 'true' || v === 1 || v === '1';
+                const isFalse = (v) =>
+                  v === false || v === 'false' || v === 0 || v === '0';
+
+                // Honor insecure TLS flags coming from the client connection options
+                // Mongo connection strings often use `tlsInsecure=true` to skip CA validation
+                const wantInsecureFromClient =
+                  isTrue(connectOptions.tlsInsecure) ||
+                  isTrue(connectOptions.tlsAllowInvalidCertificates) ||
+                  isFalse(connectOptions.rejectUnauthorized);
+
+                // Also honor insecure flags from the configured CW_MONGO_URI for this host
+                const wantInsecureFromServerConfig = mongoURIs.some(
+                  ({ uri }) => {
+                    try {
+                      const hostMatches = (uri.hosts || []).some(
+                        (h) => h.split(':')[0] === connectOptions.host
+                      );
+                      if (!hostMatches) return false;
+                      const params = uri.searchParams;
+                      return (
+                        params.get('tlsInsecure') === 'true' ||
+                        params.get('tlsAllowInvalidCertificates') === 'true'
+                      );
+                    } catch (_e) {
+                      return false;
+                    }
+                  }
+                );
+
+                const wantInsecure =
+                  globalTLSInsecure ||
+                  wantInsecureFromClient ||
+                  wantInsecureFromServerConfig;
+
+                if (wantInsecure) {
+                  tlsOptions.rejectUnauthorized = false;
+                }
+
+                // Allow skipping hostname validation when requested or when tlsInsecure=true
+                if (
+                  wantInsecure ||
+                  isTrue(connectOptions.tlsAllowInvalidHostnames)
+                ) {
+                  tlsOptions.checkServerIdentity = () => undefined;
+                }
+
+                // Some environments (e.g., DocDB with TLS only) still require SNI
+                if (!tlsOptions.servername) {
+                  tlsOptions.servername = connectOptions.host;
+                }
+
+                return tls.connect(tlsOptions);
+              })()
             : net.createConnection(connectOptions);
           mongoSocket.setKeepAlive(true, 300000);
           mongoSocket.setTimeout(30000);
@@ -338,16 +417,20 @@ fastify.after(() => {
     }
   );
 
-  fastify.post('/export-json', (request, reply) => {
-    // TODO: validate
-    const exportId = crypto.randomBytes(8).toString('hex');
-    exportIds.set(exportId, {
-      ...request.body,
-      type: 'json',
-    });
+  fastify.post(
+    '/export-json',
+    { preHandler: fastify.csrfProtection },
+    (request, reply) => {
+      // TODO: validate
+      const exportId = crypto.randomBytes(8).toString('hex');
+      exportIds.set(exportId, {
+        ...request.body,
+        type: 'json',
+      });
 
-    reply.send(exportId);
-  });
+      reply.send(exportId);
+    }
+  );
 
   fastify.get('/export/:exportId', async (request, reply) => {
     const exportId = request.params.exportId;
@@ -439,7 +522,7 @@ fastify.after(() => {
     const mongoService = connectionId ? mongoServices[connectionId] : null;
 
     if (!mongoService) {
-      reply.status(400).reply({ error: 'connection id not found' });
+      reply.status(400).send({ error: 'connection id not found' });
     }
 
     const res = await gatherFieldsFromQuery({
@@ -543,7 +626,7 @@ fastify.after(() => {
           dataService: mongoService,
           ns: body.ns,
           delimiter: body.delimiter,
-          fields: body.delimiter,
+          fields: body.fields,
           input: file.file,
         });
 
