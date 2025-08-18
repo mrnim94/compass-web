@@ -1,3 +1,9 @@
+## 0.2.5 - 2025-08-18
+
+### Added
+
+- Added `tlsInsecure` support in configuration for AWS DocumentDB
+
 ## 0.2.4 - 2025-07-24
 
 ### Changed
