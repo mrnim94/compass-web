@@ -8,7 +8,7 @@ import {
   Option,
   css,
   spacing,
-} from '../../compass/packages/compass-components';
+} from '../../compass/packages/compass-components/src';
 
 import type { AcceptedFileType } from '../../compass/packages/compass-import-export/src/constants/file-types';
 import type { Delimiter } from '../../compass/packages/compass-import-export/src/csv/csv-types';

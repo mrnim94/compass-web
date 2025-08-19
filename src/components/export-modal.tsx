@@ -10,7 +10,7 @@ import {
   Modal,
   css,
   spacing,
-} from '../../compass/packages/compass-components';
+} from '../../compass/packages/compass-components/src';
 import {
   closeExport,
   backToSelectFieldOptions,

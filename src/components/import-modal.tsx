@@ -15,7 +15,7 @@ import {
   Link,
   palette,
   useDarkMode,
-} from '../../compass/packages/compass-components';
+} from '../../compass/packages/compass-components/src';
 
 import {
   FINISHED_STATUSES,

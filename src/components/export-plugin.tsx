@@ -1,5 +1,5 @@
 import React from 'react';
-import { registerHadronPlugin } from '../../compass/packages/hadron-app-registry';
+import { registerHadronPlugin } from '../../compass/packages/hadron-app-registry/src';
 import { activatePlugin } from '../../compass/packages/compass-import-export/src/stores/export-store';
 import { preferencesLocator } from '../../compass/packages/compass-preferences-model/src/provider';
 import { createLoggerLocator } from '../../compass/packages/compass-logging/src/provider';
