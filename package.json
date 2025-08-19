@@ -4,8 +4,8 @@
   "bin": "app.js",
   "scripts": {
     "prebuild": "rm -rf dist",
-    "build": "ELECTRON_OVERRIDE_DIST_PATH=/dev/null ELECTRON_SKIP_BINARY_DOWNLOAD=1 webpack",
-    "build:production": "ELECTRON_OVERRIDE_DIST_PATH=/dev/null ELECTRON_SKIP_BINARY_DOWNLOAD=1 webpack --mode production",
+    "build": "ELECTRON_OVERRIDE_DIST_PATH=/dev/null ELECTRON_SKIP_BINARY_DOWNLOAD=1 compass/node_modules/.bin/webpack",
+    "build:production": "ELECTRON_OVERRIDE_DIST_PATH=/dev/null ELECTRON_SKIP_BINARY_DOWNLOAD=1 compass/node_modules/.bin/webpack --mode production",
     "start": "node app.js"
   },
   "author": "Haohan Yang",
@@ -43,9 +43,7 @@
   },
   "devDependencies": {
     "copy-webpack-plugin": "^13.0.0",
-    "dotenv": "^16.5.0",
-    "webpack": "^5.101.3",
-    "webpack-cli": "^6.0.1"
+    "dotenv": "^16.5.0"
   },
   "pnpm": {},
   "keywords": [

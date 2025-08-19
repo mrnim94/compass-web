@@ -1,6 +1,9 @@
 const path = require('path');
 const fs = require('fs');
-const { webpack, merge } = require('./compass/configs/webpack-config-compass');
+const {
+  webpack,
+  merge,
+} = require('./compass/configs/webpack-config-compass/src');
 const compassWebConfig = require('./compass/packages/compass-web/webpack.config');
 const CopyPlugin = require('copy-webpack-plugin');
 
