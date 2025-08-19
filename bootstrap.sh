@@ -9,10 +9,10 @@ cd compass
 
 npm ci
 
-node_modules/.bin/lerna run bootstrap --stream --scope @mongodb-js/webpack-config-compass
-#     --ignore @mongodb-js/mongodb-compass \
-#     --ignore @mongodb-js/testing-library-compass \
-#     --ignore compass-e2e-tests \
-#     --ignore @mongodb-js/compass-smoke-tests \
-#     --ignore @mongodb-js/compass-test-server \
-#     --ignore @mongodb-js/compass-web
+node_modules/.bin/lerna run bootstrap --stream \
+    --ignore @mongodb-js/mongodb-compass \
+    --ignore @mongodb-js/testing-library-compass \
+    --ignore compass-e2e-tests \
+    --ignore @mongodb-js/compass-smoke-tests \
+    --ignore @mongodb-js/compass-test-server \
+    --ignore @mongodb-js/compass-web
