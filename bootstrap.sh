@@ -9,7 +9,7 @@ cd compass
 
 npm ci
 
-# node_modules/.bin/lerna run bootstrap --stream \
+node_modules/.bin/lerna run bootstrap --stream --scope @mongodb-js/webpack-config-compass
 #     --ignore @mongodb-js/mongodb-compass \
 #     --ignore @mongodb-js/testing-library-compass \
 #     --ignore compass-e2e-tests \
