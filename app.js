@@ -134,8 +134,8 @@ if (urlParsingError) {
 
 // Create a client-safe connection string that avoids problematic SRV parsing in the frontend.
 // The compass frontend has code paths that assume hosts array exists when parsing connection strings.
-// For SRV URIs, we'll create a simplified standard URI that bypasses those code paths.
-function createClientSafeConnectionString(raw) {
+// For SRV URIs, we'll resolve the actual hosts and ports via DNS, then create a standard URI.
+async function createClientSafeConnectionString(raw) {
   try {
     const cs = new ConnectionString(raw);
     const isSrv = cs.protocol && cs.protocol.includes('srv');
@@ -144,31 +144,72 @@ function createClientSafeConnectionString(raw) {
       return raw; // Non-SRV URIs are fine as-is
     }
 
-    // For SRV URIs, create a simple mongodb:// URI using just the hostname
-    // This avoids the frontend trying to parse .hosts which may be undefined
-    const hostname = cs.hostname || 'localhost';
-    const port = cs.port || 27017;
-
-    let auth = '';
-    if (cs.username) {
-      auth += encodeURIComponent(cs.username);
-      if (cs.password) auth += `:${encodeURIComponent(cs.password)}`;
-      auth += '@';
+    // For SRV URIs, resolve the actual hosts and ports
+    const hostname = cs.hostname;
+    if (!hostname) {
+      return raw;
     }
 
-    const pathname = cs.pathname || '';
-    const params = cs.searchParams?.toString() || '';
-    const query = params ? `?${params}` : '';
+    try {
+      const srvRecords = await dns.resolveSrv(`_mongodb._tcp.${hostname}`);
+      if (!Array.isArray(srvRecords) || srvRecords.length === 0) {
+        // Fallback to hostname with default port if SRV resolution fails
+        const fallbackHost = `${hostname}:27017`;
+        const hostList = [fallbackHost];
 
-    return `mongodb://${auth}${hostname}:${port}${pathname}${query}`;
+        let auth = '';
+        if (cs.username) {
+          auth += encodeURIComponent(cs.username);
+          if (cs.password) auth += `:${encodeURIComponent(cs.password)}`;
+          auth += '@';
+        }
+
+        const pathname = cs.pathname || '';
+        const params = cs.searchParams?.toString() || '';
+        const query = params ? `?${params}` : '';
+
+        return `mongodb://${auth}${hostList.join(',')}${pathname}${query}`;
+      }
+
+      // Use the resolved SRV records
+      const hostList = srvRecords.map((record) => `${record.name}:${record.port}`);
+
+      let auth = '';
+      if (cs.username) {
+        auth += encodeURIComponent(cs.username);
+        if (cs.password) auth += `:${encodeURIComponent(cs.password)}`;
+        auth += '@';
+      }
+
+      const pathname = cs.pathname || '';
+      const params = cs.searchParams?.toString() || '';
+      const query = params ? `?${params}` : '';
+
+      return `mongodb://${auth}${hostList.join(',')}${pathname}${query}`;
+    } catch (dnsError) {
+      console.warn('Failed to resolve SRV record for', hostname, ':', dnsError.message);
+      return raw; // Fallback to original if DNS resolution fails
+    }
   } catch (_e) {
     return raw; // Fallback to original if parsing fails
   }
 }
 
 // Precompute client-safe connection strings
-mongoURIs.forEach((entry) => {
-  entry.clientConnectionString = createClientSafeConnectionString(entry.raw);
+async function initializeClientSafeConnectionStrings() {
+  await Promise.all(
+    mongoURIs.map(async (entry) => {
+      entry.clientConnectionString = await createClientSafeConnectionString(entry.raw);
+      console.log(`Converted connection string for ${entry.id}:`);
+      console.log(`  Original: ${entry.raw}`);
+      console.log(`  Client-safe: ${entry.clientConnectionString}`);
+    })
+  );
+}
+
+// Initialize connection strings
+initializeClientSafeConnectionStrings().catch((err) => {
+  console.error('Failed to initialize client-safe connection strings:', err);
 });
 
 // Validate basic auth settings
