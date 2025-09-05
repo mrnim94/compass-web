@@ -148,10 +148,17 @@ async function createClientSafeConnectionString(raw) {
     }
 
     // For SRV URIs, resolve the actual hosts and ports
-    const hostname = cs.hostname;
+    // Some versions of mongodb-connection-string-url use placeholder for hostname
+    // but populate hosts array correctly, so prefer hosts[0] over hostname
+    let hostname = cs.hostname;
     if (!hostname || hostname === '__this_is_a_placeholder__') {
-      console.log('Invalid hostname detected, using original connection string');
-      return raw;
+      if (cs.hosts && cs.hosts.length > 0) {
+        hostname = cs.hosts[0];
+        console.log('Using hostname from hosts array:', hostname);
+      } else {
+        console.log('No valid hostname found, using original connection string');
+        return raw;
+      }
     }
 
     try {
