@@ -387,7 +387,7 @@ fastify.after(() => {
             orgId: args.orgId,
             projectId: args.projectId,
             clusterUniqueId: args.clusterId,
-            clusterName: uri.hosts[0],
+            clusterName: (uri.hosts && uri.hosts[0]) || uri.hostname || 'unknown-cluster',
             clusterType: 'REPLICASET',
             clusterState: 'IDLE',
             metricsId: 'metricsid',
