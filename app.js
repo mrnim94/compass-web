@@ -138,6 +138,9 @@ if (urlParsingError) {
 async function createClientSafeConnectionString(raw) {
   try {
     const cs = new ConnectionString(raw);
+    console.log('Parsing connection string:', raw);
+    console.log('Parsed CS - protocol:', cs.protocol, 'hostname:', cs.hostname, 'hosts:', cs.hosts);
+
     const isSrv = cs.protocol && cs.protocol.includes('srv');
 
     if (!isSrv) {
@@ -146,7 +149,8 @@ async function createClientSafeConnectionString(raw) {
 
     // For SRV URIs, resolve the actual hosts and ports
     const hostname = cs.hostname;
-    if (!hostname) {
+    if (!hostname || hostname === '__this_is_a_placeholder__') {
+      console.log('Invalid hostname detected, using original connection string');
       return raw;
     }
 
