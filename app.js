@@ -5,6 +5,7 @@ const path = require('path');
 const net = require('net');
 const tls = require('tls');
 const crypto = require('crypto');
+const dns = require('dns').promises;
 const { Writable } = require('stream');
 const fastify = require('fastify')({
   logger: true,
@@ -99,7 +100,7 @@ const args = yargs(hideBin(process.argv))
 
 let mongoURIStrings = args.mongoUri.trim().split(/\s+/);
 /**
- * @type {Array<{uri: ConnectionString, id: string}>}
+ * @type {Array<{uri: ConnectionString, raw: string, id: string, clientConnectionString?: string}>}
  */
 const mongoURIs = [];
 
@@ -116,6 +117,7 @@ mongoURIStrings.forEach((uri, index) => {
 
     mongoURIs.push({
       uri: mongoUri,
+      raw: uri,
       id: crypto.randomBytes(8).toString('hex'),
     });
   } catch (err) {
@@ -129,6 +131,54 @@ if (urlParsingError) {
   console.error(urlParsingError);
   process.exit(1);
 }
+
+// Resolve SRV records to a standard mongodb:// URI for the browser client when possible.
+// Some frontend code paths may attempt to operate on host lists and call `.join()`; providing
+// a non-SRV URI avoids SRV parsing in the browser entirely.
+async function resolveSrvToStandardConnectionString(raw) {
+  try {
+    const cs = new ConnectionString(raw);
+    const isSrv = cs.protocol && cs.protocol.includes('srv');
+    const hostname = cs.hostname;
+    if (!isSrv || !hostname) return null;
+
+    const srvRecords = await dns.resolveSrv(`_mongodb._tcp.${hostname}`);
+    if (!Array.isArray(srvRecords) || srvRecords.length === 0) {
+      return null;
+    }
+
+    const hostList = srvRecords.map((r) => `${r.name}:${r.port}`);
+
+    let auth = '';
+    if (cs.username) {
+      auth += encodeURIComponent(cs.username);
+      if (cs.password) auth += `:${encodeURIComponent(cs.password)}`;
+      auth += '@';
+    }
+
+    const pathname = cs.pathname || '';
+    const params = cs.searchParams?.toString() || '';
+    const query = params ? `?${params}` : '';
+
+    return `mongodb://${auth}${hostList.join(',')}${pathname}${query}`;
+  } catch (_e) {
+    return null;
+  }
+}
+
+// Precompute client-safe connection strings
+(async () => {
+  await Promise.all(
+    mongoURIs.map(async (entry) => {
+      if (entry.raw.startsWith('mongodb+srv://')) {
+        const resolved = await resolveSrvToStandardConnectionString(entry.raw);
+        if (resolved) {
+          entry.clientConnectionString = resolved;
+        }
+      }
+    })
+  );
+})();
 
 // Validate basic auth settings
 let basicAuth = null;
@@ -378,10 +428,10 @@ fastify.after(() => {
     '/explorer/v1/groups/:projectId/clusters/connectionInfo',
     (request, reply) => {
       reply.send(
-        mongoURIs.map(({ uri, id }) => ({
+        mongoURIs.map(({ uri, id, clientConnectionString }) => ({
           id: id,
           connectionOptions: {
-            connectionString: uri.href,
+            connectionString: clientConnectionString || uri.href,
           },
           atlasMetadata: {
             orgId: args.orgId,
