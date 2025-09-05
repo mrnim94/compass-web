@@ -132,22 +132,22 @@ if (urlParsingError) {
   process.exit(1);
 }
 
-// Resolve SRV records to a standard mongodb:// URI for the browser client when possible.
-// Some frontend code paths may attempt to operate on host lists and call `.join()`; providing
-// a non-SRV URI avoids SRV parsing in the browser entirely.
-async function resolveSrvToStandardConnectionString(raw) {
+// Create a client-safe connection string that avoids problematic SRV parsing in the frontend.
+// The compass frontend has code paths that assume hosts array exists when parsing connection strings.
+// For SRV URIs, we'll create a simplified standard URI that bypasses those code paths.
+function createClientSafeConnectionString(raw) {
   try {
     const cs = new ConnectionString(raw);
     const isSrv = cs.protocol && cs.protocol.includes('srv');
-    const hostname = cs.hostname;
-    if (!isSrv || !hostname) return null;
 
-    const srvRecords = await dns.resolveSrv(`_mongodb._tcp.${hostname}`);
-    if (!Array.isArray(srvRecords) || srvRecords.length === 0) {
-      return null;
+    if (!isSrv) {
+      return raw; // Non-SRV URIs are fine as-is
     }
 
-    const hostList = srvRecords.map((r) => `${r.name}:${r.port}`);
+    // For SRV URIs, create a simple mongodb:// URI using just the hostname
+    // This avoids the frontend trying to parse .hosts which may be undefined
+    const hostname = cs.hostname || 'localhost';
+    const port = cs.port || 27017;
 
     let auth = '';
     if (cs.username) {
@@ -160,25 +160,16 @@ async function resolveSrvToStandardConnectionString(raw) {
     const params = cs.searchParams?.toString() || '';
     const query = params ? `?${params}` : '';
 
-    return `mongodb://${auth}${hostList.join(',')}${pathname}${query}`;
+    return `mongodb://${auth}${hostname}:${port}${pathname}${query}`;
   } catch (_e) {
-    return null;
+    return raw; // Fallback to original if parsing fails
   }
 }
 
 // Precompute client-safe connection strings
-(async () => {
-  await Promise.all(
-    mongoURIs.map(async (entry) => {
-      if (entry.raw.startsWith('mongodb+srv://')) {
-        const resolved = await resolveSrvToStandardConnectionString(entry.raw);
-        if (resolved) {
-          entry.clientConnectionString = resolved;
-        }
-      }
-    })
-  );
-})();
+mongoURIs.forEach((entry) => {
+  entry.clientConnectionString = createClientSafeConnectionString(entry.raw);
+});
 
 // Validate basic auth settings
 let basicAuth = null;
