@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { createNoopLogger } from '@mongodb-js/compass-logging/provider';
+import { createNoopLogger } from '../../compass/packages/compass-logging/src/provider';
 import {
   Preferences,
   type PreferencesAccess,

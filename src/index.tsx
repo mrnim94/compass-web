@@ -7,7 +7,7 @@ import {
   Body,
   openToast,
   SpinLoaderWithLabel,
-} from '@mongodb-js/compass-components';
+} from '../compass/packages/compass-components/src';
 import { useWorkspaceTabRouter } from '../compass/packages/compass-web/sandbox/sandbox-workspace-tab-router';
 import { type AllPreferences } from '../compass/packages/compass-preferences-model/src';
 import { compassWebLogger } from './logger';

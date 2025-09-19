@@ -10,7 +10,7 @@ import {
   Modal,
   css,
   spacing,
-} from '@mongodb-js/compass-components';
+} from '../../compass/packages/compass-components/src';
 import {
   closeExport,
   backToSelectFieldOptions,
@@ -40,7 +40,7 @@ import { JSONFileTypeOptions } from '../../compass/packages/compass-import-expor
 import {
   useTrackOnChange,
   type TrackFunction,
-} from '@mongodb-js/compass-telemetry/provider';
+} from '../../compass/packages/compass-telemetry/src/provider';
 
 type ExportFileTypes = 'json' | 'csv';
 

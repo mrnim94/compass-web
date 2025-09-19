@@ -2,56 +2,59 @@ import React, { useEffect, useRef, useState } from 'react';
 import AppRegistry, {
   AppRegistryProvider,
   GlobalAppRegistryProvider,
-} from 'hadron-app-registry';
-import type { ConnectionInfo } from '@mongodb-js/compass-connections/provider';
-import { useConnectionActions } from '@mongodb-js/compass-connections/provider';
-import { CompassInstanceStorePlugin } from '@mongodb-js/compass-app-stores';
-import type { OpenWorkspaceOptions } from '@mongodb-js/compass-workspaces';
+} from '../../compass/packages/hadron-app-registry/src';
+import type { ConnectionInfo } from '../../compass/packages/compass-connections/src/provider';
+import { useConnectionActions } from '../../compass/packages/compass-connections/src/provider';
+import { CompassInstanceStorePlugin } from '../../compass/packages/compass-app-stores/src';
+import type { OpenWorkspaceOptions } from '../../compass/packages/compass-workspaces/src';
 import WorkspacesPlugin, {
   WorkspacesProvider,
-} from '@mongodb-js/compass-workspaces';
-import { CompassSettingsPlugin } from '@mongodb-js/compass-settings';
+} from '../../compass/packages/compass-workspaces/src';
+import { CompassSettingsPlugin } from '../../compass/packages/compass-settings/src';
 import {
   DatabasesWorkspaceTab,
   CollectionsWorkspaceTab,
-} from '@mongodb-js/compass-databases-collections';
-import { CompassComponentsProvider, css } from '@mongodb-js/compass-components';
+} from '../../compass/packages/databases-collections/src';
+import {
+  CompassComponentsProvider,
+  css,
+} from '../../compass/packages/compass-components/src';
 import {
   WorkspaceTab as CollectionWorkspace,
   CollectionTabsProvider,
-} from '@mongodb-js/compass-collection';
+} from '../../compass/packages/compass-collection/src';
 import {
   CompassSidebarPlugin,
   AtlasClusterConnectionsOnlyProvider,
-} from '@mongodb-js/compass-sidebar';
-import CompassQueryBarPlugin from '@mongodb-js/compass-query-bar';
-import { CompassDocumentsPlugin } from '@mongodb-js/compass-crud';
+} from '../../compass/packages/compass-sidebar/src';
+import CompassQueryBarPlugin from '../../compass/packages/compass-query-bar/src';
+import { CompassDocumentsPlugin } from '../../compass/packages/compass-crud/src';
 import {
   CompassAggregationsPlugin,
   CreateViewPlugin,
-} from '@mongodb-js/compass-aggregations';
-import { CompassSchemaPlugin } from '@mongodb-js/compass-schema';
-import { CompassIndexesPlugin } from '@mongodb-js/compass-indexes';
-import { CompassSchemaValidationPlugin } from '@mongodb-js/compass-schema-validation';
-import { CompassGlobalWritesPlugin } from '@mongodb-js/compass-global-writes';
-import { CompassGenerativeAIPlugin } from '@mongodb-js/compass-generative-ai';
-import ExplainPlanCollectionTabModal from '@mongodb-js/compass-explain-plan';
-import ExportToLanguageCollectionTabModal from '@mongodb-js/compass-export-to-language';
+} from '../../compass/packages/compass-aggregations/src';
+import { CompassSchemaPlugin } from '../../compass/packages/compass-schema/src';
+import { CompassIndexesPlugin } from '../../compass/packages/compass-indexes/src';
+import { CompassSchemaValidationPlugin } from '../../compass/packages/compass-schema-validation/src';
+import { CompassGlobalWritesPlugin } from '../../compass/packages/compass-global-writes/src';
+import { CompassGenerativeAIPlugin } from '../../compass/packages/compass-generative-ai/src';
+import ExplainPlanCollectionTabModal from '../../compass/packages/compass-explain-plan/src';
+import ExportToLanguageCollectionTabModal from '../../compass/packages/compass-export-to-language/src';
 import { ExportPlugin } from './export-plugin';
 import { ImportPlugin } from './import-plugin';
 import {
   CreateNamespacePlugin,
   DropNamespacePlugin,
   RenameCollectionPlugin,
-} from '@mongodb-js/compass-databases-collections';
+} from '../../compass/packages/databases-collections/src';
 import { PreferencesProvider } from '../../compass/packages/compass-preferences-model/src/provider';
 import type { AllPreferences } from '../../compass/packages/compass-preferences-model/src/provider';
-import FieldStorePlugin from '@mongodb-js/compass-field-store';
-import { AtlasServiceProvider } from '@mongodb-js/atlas-service/provider';
-import { AtlasAiServiceProvider } from '@mongodb-js/compass-generative-ai/provider';
-import { LoggerProvider } from '@mongodb-js/compass-logging/provider';
-import { TelemetryProvider } from '@mongodb-js/compass-telemetry/provider';
-import CompassConnections from '@mongodb-js/compass-connections';
+import FieldStorePlugin from '../../compass/packages/compass-field-store/src';
+import { AtlasServiceProvider } from '../../compass/packages/atlas-service/src/provider';
+import { AtlasAiServiceProvider } from '../../compass/packages/compass-generative-ai/src/provider';
+import { LoggerProvider } from '../../compass/packages/compass-logging/src/provider';
+import { TelemetryProvider } from '../../compass/packages/compass-telemetry/src/provider';
+import CompassConnections from '../../compass/packages/compass-connections/src';
 import { AtlasCloudConnectionStorageProvider } from '../../compass/packages/compass-web/src/connection-storage';
 import { AtlasCloudAuthServiceProvider } from '../../compass/packages/compass-web/src/atlas-auth-service';
 import type {
@@ -60,11 +63,11 @@ import type {
   DebugFunction,
 } from '../../compass/packages/compass-web/src/logger-and-telemetry';
 import { useCompassWebLoggerAndTelemetry } from '../../compass/packages/compass-web/src/logger-and-telemetry';
-import { type TelemetryServiceOptions } from '@mongodb-js/compass-telemetry';
-import { WebWorkspaceTab as WelcomeWorkspaceTab } from '@mongodb-js/compass-welcome';
+import { type TelemetryServiceOptions } from '../../compass/packages/compass-telemetry/src';
+import { WebWorkspaceTab as WelcomeWorkspaceTab } from '../../compass/packages/compass-welcome/src';
 import { useCompassWebPreferences } from './preferences';
-import { WorkspaceTab as DataModelingWorkspace } from '@mongodb-js/compass-data-modeling';
-import { DataModelStorageServiceProviderInMemory } from '@mongodb-js/compass-data-modeling/web';
+import { WorkspaceTab as DataModelingWorkspace } from '../../compass/packages/compass-data-modeling/src';
+import { DataModelStorageServiceProviderInMemory } from '../../compass/packages/compass-data-modeling/src/services/data-model-storage-in-memory';
 
 const WithAtlasProviders: React.FC = ({ children }) => {
   return (

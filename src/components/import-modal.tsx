@@ -15,7 +15,7 @@ import {
   Link,
   palette,
   useDarkMode,
-} from '@mongodb-js/compass-components';
+} from '../../compass/packages/compass-components/src';
 
 import {
   FINISHED_STATUSES,
@@ -47,7 +47,7 @@ import type {
 import {
   useTrackOnChange,
   type TrackFunction,
-} from '@mongodb-js/compass-telemetry/provider';
+} from '../../compass/packages/compass-telemetry/src/provider';
 
 const closeButtonStyles = css({
   marginRight: spacing[200],
