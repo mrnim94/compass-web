@@ -1,3 +1,25 @@
+## 0.2.5 - 2025-08-18
+
+### Added
+
+- Added `tlsInsecure` support in configuration for AWS DocumentDB
+
+## 0.2.4 - 2025-07-24
+
+### Changed
+
+- Fixed template root path bug
+
+## 0.2.3 - 2025-07-17
+
+### Added
+
+- Support "Add Data" function.
+
+### Changed
+
+- CSRF protection added to improve security.
+
 ## 0.2.2 - 2025-07-10
 
 ### Added

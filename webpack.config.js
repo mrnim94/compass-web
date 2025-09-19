@@ -37,7 +37,7 @@ module.exports = (env, args) => {
     entry: path.resolve(__dirname, 'src', 'index.tsx'),
     plugins: [
       new CopyPlugin({
-        patterns: ['src/index.html', 'src/favicon.svg'],
+        patterns: ['src/index.eta', 'src/favicon.svg'],
       }),
       new webpack.DefinePlugin({
         'process.env.ENABLE_DEBUG': args.mode != 'production',

@@ -145,7 +145,9 @@ export const runExport = ({
             method: 'POST',
             body: JSON.stringify({ ...baseExportOptions, aggregation }),
             headers: {
-              'Content-Type': 'application/json'
+              'Content-Type': 'application/json',
+              // @ts-ignore
+              'csrf-token': document.querySelector('meta[name="csrf-token" i]')?.content ?? ''
             }
           })
         } else {
@@ -153,7 +155,9 @@ export const runExport = ({
             method: 'POST',
             body: JSON.stringify({ ...baseExportOptions, aggregation, jsonFormatVariant }),
             headers: {
-              'Content-Type': 'application/json'
+              'Content-Type': 'application/json',
+              // @ts-ignore
+              'csrf-token': document.querySelector('meta[name="csrf-token" i]')?.content ?? ''
             }
           }))
         }
@@ -163,7 +167,9 @@ export const runExport = ({
             method: 'POST',
             body: JSON.stringify({ ...baseExportOptions, query }),
             headers: {
-              'Content-Type': 'application/json'
+              'Content-Type': 'application/json',
+              // @ts-ignore
+              'csrf-token': document.querySelector('meta[name="csrf-token" i]')?.content ?? ''
             }
           })
         } else {
@@ -171,7 +177,9 @@ export const runExport = ({
             method: 'POST',
             body: JSON.stringify({ ...baseExportOptions, query, jsonFormatVariant }),
             headers: {
-              'Content-Type': 'application/json'
+              'Content-Type': 'application/json',
+              // @ts-ignore
+              'csrf-token': document.querySelector('meta[name="csrf-token" i]')?.content ?? ''
             }
           })
         }
@@ -299,7 +307,7 @@ export const selectFieldsToExport = (): ExportThunkAction<
       }
 
       const res = await fetch("/gather-fields", {
-        method: "POST",
+        method: 'POST',
         body: JSON.stringify({
           connectionId: connectionId,
           ns: namespace,
@@ -307,7 +315,9 @@ export const selectFieldsToExport = (): ExportThunkAction<
           sampleSize: 50,
         }),
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          // @ts-ignore
+          'csrf-token': document.querySelector('meta[name="csrf-token" i]')?.content ?? ''
         }
       })
 

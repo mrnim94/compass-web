@@ -319,20 +319,6 @@ const CompassWeb = ({
                       orgId={orgId}
                       projectId={projectId}
                     >
-                      {/* <FileInputBackendProvider
-                        createFileInputBackend={() => ({
-                          openFileChooser: (options) => {
-                            console.log('openFileChooser');
-                          },
-                          onFilesChosen: (listener) => {
-                            console.log('onFilesChosen');
-                            return () => {};
-                          },
-                          getPathForFile: (file) => {
-                            return file.path;
-                          },
-                        })}
-                      > */}
                       <CompassConnections
                         appName={appName ?? 'Compass Web'}
                         onFailToLoadConnections={onFailToLoadConnections}
@@ -384,7 +370,6 @@ const CompassWeb = ({
                           <CompassGenerativeAIPlugin projectId={projectId} />
                         </CompassInstanceStorePlugin>
                       </CompassConnections>
-                      {/* </FileInputBackendProvider> */}
                     </AtlasCloudConnectionStorageProvider>
                   </DataModelStorageServiceProviderInMemory>
                 </WithAtlasProviders>
