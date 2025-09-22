@@ -6,6 +6,12 @@ const net = require('net');
 const tls = require('tls');
 const crypto = require('crypto');
 const dns = require('dns').promises;
+let driverConnStringUtils = null;
+try {
+  driverConnStringUtils = require('mongodb/lib/connection_string');
+} catch (_e) {
+  // Fallback to manual SRV resolution when driver internals are unavailable
+}
 const { Writable } = require('stream');
 const fastify = require('fastify')({
   logger: true,
@@ -138,13 +144,28 @@ if (urlParsingError) {
 async function createClientSafeConnectionString(raw) {
   try {
     const cs = new ConnectionString(raw);
-    console.log('Parsing connection string:', raw);
-    console.log('Parsed CS - protocol:', cs.protocol, 'hostname:', cs.hostname, 'hosts:', cs.hosts);
-
     const isSrv = cs.protocol && cs.protocol.includes('srv');
 
     if (!isSrv) {
       return raw; // Non-SRV URIs are fine as-is
+    }
+
+    // Prefer driver-based SRV resolution to include TXT-record-derived options
+    if (
+      driverConnStringUtils &&
+      typeof driverConnStringUtils.resolveSRVRecord === 'function' &&
+      typeof driverConnStringUtils.parseOptions === 'function'
+    ) {
+      try {
+        const parsed = driverConnStringUtils.parseOptions(cs.toString());
+        const addresses = await driverConnStringUtils.resolveSRVRecord(parsed);
+        cs.protocol = 'mongodb';
+        cs.isSRV = false;
+        cs.hosts = addresses.map((addr) => addr.toString());
+        return cs.toString();
+      } catch (_e) {
+        // Fall through to manual DNS resolution below
+      }
     }
 
     // For SRV URIs, resolve the actual hosts and ports
@@ -154,9 +175,7 @@ async function createClientSafeConnectionString(raw) {
     if (!hostname || hostname === '__this_is_a_placeholder__') {
       if (cs.hosts && cs.hosts.length > 0) {
         hostname = cs.hosts[0];
-        console.log('Using hostname from hosts array:', hostname);
       } else {
-        console.log('No valid hostname found, using original connection string');
         return raw;
       }
     }
@@ -211,17 +230,10 @@ async function initializeClientSafeConnectionStrings() {
   await Promise.all(
     mongoURIs.map(async (entry) => {
       entry.clientConnectionString = await createClientSafeConnectionString(entry.raw);
-      console.log(`Converted connection string for ${entry.id}:`);
-      console.log(`  Original: ${entry.raw}`);
-      console.log(`  Client-safe: ${entry.clientConnectionString}`);
     })
   );
 }
 
-// Initialize connection strings
-initializeClientSafeConnectionStrings().catch((err) => {
-  console.error('Failed to initialize client-safe connection strings:', err);
-});
 
 // Validate basic auth settings
 let basicAuth = null;
@@ -802,40 +814,47 @@ fastify.after(() => {
   });
 });
 
-fastify.listen({ port: args.port, host: args.host }, (err, address) => {
-  if (err) {
-    console.error(err);
-    process.exit(1);
-  }
-
-  // Clean up connections on shutdown
-  for (const signal of ['SIGINT', 'SIGTERM']) {
-    process.on(signal, () => {
-      if (shuttingDown) {
-        return;
+initializeClientSafeConnectionStrings()
+  .then(() => {
+    fastify.listen({ port: args.port, host: args.host }, (err, address) => {
+      if (err) {
+        console.error(err);
+        process.exit(1);
       }
 
-      shuttingDown = true;
-      console.log('Shutting down the server...');
+      // Clean up connections on shutdown
+      for (const signal of ['SIGINT', 'SIGTERM']) {
+        process.on(signal, () => {
+          if (shuttingDown) {
+            return;
+          }
 
-      // 20 seconds timeout to shutdown
-      const timeout = setTimeout(() => {
-        console.warn('Forcefully shutting down after 20 seconds.');
-        process.exit(1);
-      }, 20 * 1000);
+          shuttingDown = true;
+          console.log('Shutting down the server...');
 
-      exportIds.close();
+          // 20 seconds timeout to shutdown
+          const timeout = setTimeout(() => {
+            console.warn('Forcefully shutting down after 20 seconds.');
+            process.exit(1);
+          }, 20 * 1000);
 
-      Promise.allSettled([
-        fastify.close(),
-        // Close all MongoDB clients
-        Object.entries(mongoServices).map(([_, service]) =>
-          service.disconnect()
-        ),
-      ]).finally(() => {
-        clearTimeout(timeout);
-        process.exit();
-      });
+          exportIds.close();
+
+          Promise.allSettled([
+            fastify.close(),
+            // Close all MongoDB clients
+            Object.entries(mongoServices).map(([_, service]) =>
+              service.disconnect()
+            ),
+          ]).finally(() => {
+            clearTimeout(timeout);
+            process.exit();
+          });
+        });
+      }
     });
-  }
-});
+  })
+  .catch((err) => {
+    console.error('Failed to initialize client-safe connection strings:', err);
+    process.exit(1);
+  });
