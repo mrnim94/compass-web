@@ -5,13 +5,11 @@ const path = require('path');
 const net = require('net');
 const tls = require('tls');
 const crypto = require('crypto');
-const dns = require('dns').promises;
-let driverConnStringUtils = null;
-try {
-  driverConnStringUtils = require('mongodb/lib/connection_string');
-} catch (_e) {
-  // Fallback to manual SRV resolution when driver internals are unavailable
-}
+const {
+  resolveSRVRecord,
+  parseOptions,
+} = require('mongodb/lib/connection_string');
+const { ConnectionString } = require('mongodb-connection-string-url');
 const { Writable } = require('stream');
 const fastify = require('fastify')({
   logger: true,
@@ -140,7 +138,7 @@ if (urlParsingError) {
 
 // Create a client-safe connection string that avoids problematic SRV parsing in the frontend.
 // The compass frontend has code paths that assume hosts array exists when parsing connection strings.
-// For SRV URIs, we'll resolve the actual hosts and ports via DNS, then create a standard URI.
+// For SRV URIs, we'll resolve the actual hosts and ports using the MongoDB driver utilities.
 async function createClientSafeConnectionString(raw) {
   try {
     const cs = new ConnectionString(raw);
@@ -150,78 +148,14 @@ async function createClientSafeConnectionString(raw) {
       return raw; // Non-SRV URIs are fine as-is
     }
 
-    // Prefer driver-based SRV resolution to include TXT-record-derived options
-    if (
-      driverConnStringUtils &&
-      typeof driverConnStringUtils.resolveSRVRecord === 'function' &&
-      typeof driverConnStringUtils.parseOptions === 'function'
-    ) {
-      try {
-        const parsed = driverConnStringUtils.parseOptions(cs.toString());
-        const addresses = await driverConnStringUtils.resolveSRVRecord(parsed);
-        cs.protocol = 'mongodb';
-        cs.isSRV = false;
-        cs.hosts = addresses.map((addr) => addr.toString());
-        return cs.toString();
-      } catch (_e) {
-        // Fall through to manual DNS resolution below
-      }
-    }
+    const res = await resolveSRVRecord(parseOptions(cs.toString()));
+    cs.protocol = 'mongodb';
+    cs.isSRV = false;
+    cs.hosts = res.map((address) => address.toString());
 
-    // For SRV URIs, resolve the actual hosts and ports
-    // Some versions of mongodb-connection-string-url use placeholder for hostname
-    // but populate hosts array correctly, so prefer hosts[0] over hostname
-    let hostname = cs.hostname;
-    if (!hostname || hostname === '__this_is_a_placeholder__') {
-      if (cs.hosts && cs.hosts.length > 0) {
-        hostname = cs.hosts[0];
-      } else {
-        return raw;
-      }
-    }
-
-    try {
-      const srvRecords = await dns.resolveSrv(`_mongodb._tcp.${hostname}`);
-      if (!Array.isArray(srvRecords) || srvRecords.length === 0) {
-        // Fallback to hostname with default port if SRV resolution fails
-        const fallbackHost = `${hostname}:27017`;
-        const hostList = [fallbackHost];
-
-        let auth = '';
-        if (cs.username) {
-          auth += encodeURIComponent(cs.username);
-          if (cs.password) auth += `:${encodeURIComponent(cs.password)}`;
-          auth += '@';
-        }
-
-        const pathname = cs.pathname || '';
-        const params = cs.searchParams?.toString() || '';
-        const query = params ? `?${params}` : '';
-
-        return `mongodb://${auth}${hostList.join(',')}${pathname}${query}`;
-      }
-
-      // Use the resolved SRV records
-      const hostList = srvRecords.map((record) => `${record.name}:${record.port}`);
-
-      let auth = '';
-      if (cs.username) {
-        auth += encodeURIComponent(cs.username);
-        if (cs.password) auth += `:${encodeURIComponent(cs.password)}`;
-        auth += '@';
-      }
-
-      const pathname = cs.pathname || '';
-      const params = cs.searchParams?.toString() || '';
-      const query = params ? `?${params}` : '';
-
-      return `mongodb://${auth}${hostList.join(',')}${pathname}${query}`;
-    } catch (dnsError) {
-      console.warn('Failed to resolve SRV record for', hostname, ':', dnsError.message);
-      return raw; // Fallback to original if DNS resolution fails
-    }
+    return cs.toString();
   } catch (_e) {
-    return raw; // Fallback to original if parsing fails
+    return raw; // Fallback to original if SRV resolution fails
   }
 }
 
