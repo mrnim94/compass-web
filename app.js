@@ -5,6 +5,11 @@ const path = require('path');
 const net = require('net');
 const tls = require('tls');
 const crypto = require('crypto');
+const {
+  resolveSRVRecord,
+  parseOptions,
+} = require('mongodb/lib/connection_string');
+const { ConnectionString } = require('mongodb-connection-string-url');
 const { Writable } = require('stream');
 const fastify = require('fastify')({
   logger: true,
@@ -99,7 +104,7 @@ const args = yargs(hideBin(process.argv))
 
 let mongoURIStrings = args.mongoUri.trim().split(/\s+/);
 /**
- * @type {Array<{uri: ConnectionString, id: string}>}
+ * @type {Array<{uri: ConnectionString, raw: string, id: string, clientConnectionString?: string}>}
  */
 const mongoURIs = [];
 
@@ -116,6 +121,7 @@ mongoURIStrings.forEach((uri, index) => {
 
     mongoURIs.push({
       uri: mongoUri,
+      raw: uri,
       id: crypto.randomBytes(8).toString('hex'),
     });
   } catch (err) {
@@ -129,6 +135,30 @@ if (urlParsingError) {
   console.error(urlParsingError);
   process.exit(1);
 }
+
+// Create a client-safe connection string that avoids problematic SRV parsing in the frontend.
+// The compass frontend has code paths that assume hosts array exists when parsing connection strings.
+// For SRV URIs, we'll resolve the actual hosts and ports using the MongoDB driver utilities.
+async function createClientSafeConnectionString(raw) {
+  try {
+    const cs = new ConnectionString(raw);
+    const isSrv = cs.protocol && cs.protocol.includes('srv');
+
+    if (!isSrv) {
+      return raw; // Non-SRV URIs are fine as-is
+    }
+
+    const res = await resolveSRVRecord(parseOptions(cs.toString()));
+    cs.protocol = 'mongodb';
+    cs.isSRV = false;
+    cs.hosts = res.map((address) => address.toString());
+
+    return cs.toString();
+  } catch (_e) {
+    return raw; // Fallback to original if SRV resolution fails
+  }
+}
+
 
 // Validate basic auth settings
 let basicAuth = null;
@@ -376,29 +406,33 @@ fastify.after(() => {
 
   fastify.get(
     '/explorer/v1/groups/:projectId/clusters/connectionInfo',
-    (request, reply) => {
-      reply.send(
-        mongoURIs.map(({ uri, id }) => ({
-          id: id,
-          connectionOptions: {
-            connectionString: uri.href,
-          },
-          atlasMetadata: {
-            orgId: args.orgId,
-            projectId: args.projectId,
-            clusterUniqueId: args.clusterId,
-            clusterName: uri.hosts[0],
-            clusterType: 'REPLICASET',
-            clusterState: 'IDLE',
-            metricsId: 'metricsid',
-            metricsType: 'replicaSet',
-            supports: {
-              globalWrites: false,
-              rollingIndexes: false,
+    async (request, reply) => {
+      const connectionInfos = await Promise.all(
+        mongoURIs.map(async ({ uri, id, raw }) => {
+          const clientConnectionString = await createClientSafeConnectionString(raw);
+          return {
+            id: id,
+            connectionOptions: {
+              connectionString: clientConnectionString,
             },
-          },
-        }))
+            atlasMetadata: {
+              orgId: args.orgId,
+              projectId: args.projectId,
+              clusterUniqueId: args.clusterId,
+              clusterName: (uri.hosts && uri.hosts[0]) || uri.hostname || 'unknown-cluster',
+              clusterType: 'REPLICASET',
+              clusterState: 'IDLE',
+              metricsId: 'metricsid',
+              metricsType: 'replicaSet',
+              supports: {
+                globalWrites: false,
+                rollingIndexes: false,
+              },
+            },
+          };
+        })
       );
+      reply.send(connectionInfos);
     }
   );
 
