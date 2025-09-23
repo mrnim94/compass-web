@@ -159,15 +159,6 @@ async function createClientSafeConnectionString(raw) {
   }
 }
 
-// Precompute client-safe connection strings
-async function initializeClientSafeConnectionStrings() {
-  await Promise.all(
-    mongoURIs.map(async (entry) => {
-      entry.clientConnectionString = await createClientSafeConnectionString(entry.raw);
-    })
-  );
-}
-
 
 // Validate basic auth settings
 let basicAuth = null;
@@ -415,29 +406,33 @@ fastify.after(() => {
 
   fastify.get(
     '/explorer/v1/groups/:projectId/clusters/connectionInfo',
-    (request, reply) => {
-      reply.send(
-        mongoURIs.map(({ uri, id, clientConnectionString }) => ({
-          id: id,
-          connectionOptions: {
-            connectionString: clientConnectionString || uri.href,
-          },
-          atlasMetadata: {
-            orgId: args.orgId,
-            projectId: args.projectId,
-            clusterUniqueId: args.clusterId,
-            clusterName: (uri.hosts && uri.hosts[0]) || uri.hostname || 'unknown-cluster',
-            clusterType: 'REPLICASET',
-            clusterState: 'IDLE',
-            metricsId: 'metricsid',
-            metricsType: 'replicaSet',
-            supports: {
-              globalWrites: false,
-              rollingIndexes: false,
+    async (request, reply) => {
+      const connectionInfos = await Promise.all(
+        mongoURIs.map(async ({ uri, id, raw }) => {
+          const clientConnectionString = await createClientSafeConnectionString(raw);
+          return {
+            id: id,
+            connectionOptions: {
+              connectionString: clientConnectionString,
             },
-          },
-        }))
+            atlasMetadata: {
+              orgId: args.orgId,
+              projectId: args.projectId,
+              clusterUniqueId: args.clusterId,
+              clusterName: (uri.hosts && uri.hosts[0]) || uri.hostname || 'unknown-cluster',
+              clusterType: 'REPLICASET',
+              clusterState: 'IDLE',
+              metricsId: 'metricsid',
+              metricsType: 'replicaSet',
+              supports: {
+                globalWrites: false,
+                rollingIndexes: false,
+              },
+            },
+          };
+        })
       );
+      reply.send(connectionInfos);
     }
   );
 
@@ -748,47 +743,40 @@ fastify.after(() => {
   });
 });
 
-initializeClientSafeConnectionStrings()
-  .then(() => {
-    fastify.listen({ port: args.port, host: args.host }, (err, address) => {
-      if (err) {
-        console.error(err);
-        process.exit(1);
-      }
-
-      // Clean up connections on shutdown
-      for (const signal of ['SIGINT', 'SIGTERM']) {
-        process.on(signal, () => {
-          if (shuttingDown) {
-            return;
-          }
-
-          shuttingDown = true;
-          console.log('Shutting down the server...');
-
-          // 20 seconds timeout to shutdown
-          const timeout = setTimeout(() => {
-            console.warn('Forcefully shutting down after 20 seconds.');
-            process.exit(1);
-          }, 20 * 1000);
-
-          exportIds.close();
-
-          Promise.allSettled([
-            fastify.close(),
-            // Close all MongoDB clients
-            Object.entries(mongoServices).map(([_, service]) =>
-              service.disconnect()
-            ),
-          ]).finally(() => {
-            clearTimeout(timeout);
-            process.exit();
-          });
-        });
-      }
-    });
-  })
-  .catch((err) => {
-    console.error('Failed to initialize client-safe connection strings:', err);
+fastify.listen({ port: args.port, host: args.host }, (err, address) => {
+  if (err) {
+    console.error(err);
     process.exit(1);
-  });
+  }
+
+  // Clean up connections on shutdown
+  for (const signal of ['SIGINT', 'SIGTERM']) {
+    process.on(signal, () => {
+      if (shuttingDown) {
+        return;
+      }
+
+      shuttingDown = true;
+      console.log('Shutting down the server...');
+
+      // 20 seconds timeout to shutdown
+      const timeout = setTimeout(() => {
+        console.warn('Forcefully shutting down after 20 seconds.');
+        process.exit(1);
+      }, 20 * 1000);
+
+      exportIds.close();
+
+      Promise.allSettled([
+        fastify.close(),
+        // Close all MongoDB clients
+        Object.entries(mongoServices).map(([_, service]) =>
+          service.disconnect()
+        ),
+      ]).finally(() => {
+        clearTimeout(timeout);
+        process.exit();
+      });
+    });
+  }
+});
