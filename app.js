@@ -17,7 +17,6 @@ const fastify = require('fastify')({
 const { Eta } = require('eta');
 const yargs = require('yargs');
 const { hideBin } = require('yargs/helpers');
-const { ConnectionString } = require('mongodb-connection-string-url');
 const {
   decodeMessageWithTypeByte,
   encodeStringMessageWithTypeByte,
