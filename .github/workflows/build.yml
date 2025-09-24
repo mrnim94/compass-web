@@ -40,8 +40,8 @@ jobs:
         run: |
           pnpm pack
           tar -xvzf compass-web-*.tgz
-      - name: Upload tarball
-        uses: actions/upload-pages-artifact@v3
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
         with:
           name: compass-web
           path: package
