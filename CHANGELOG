@@ -1,3 +1,9 @@
+## 0.2.6 - 2025-09-24
+
+### Changed
+
+- Fixed MongoDB SRV Resolving for Azure Cosmos DB
+
 ## 0.2.5 - 2025-08-18
 
 ### Added
