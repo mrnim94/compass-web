@@ -5,6 +5,11 @@
 
 A port of the MongoDB Compass to Web. The frontend is rebuilt and re-packaged from the original [@mongodb-js/compass-web](https://www.npmjs.com/package/@mongodb-js/compass-web). It provides an easy way to view and interact with your databases from a browser, while keeping most of the MongoDB Compass features.
 
+## Supported Cloud Providers
+- MongoDB Atlas
+- Amazon DocumentDB
+- Azure Cosmos DB
+
 ## ![screenshot light theme](/images/screenshot4.png)
 
 ## ![screenshot dark theme](/images/screenshot5.png)
