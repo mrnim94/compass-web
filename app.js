@@ -507,7 +507,7 @@ fastify.after(() => {
             res = await exportJSONFromAggregation({
               ns: exportOptions.ns,
               aggregation: exportOptions.aggregation,
-              preferences: exportOptions.preferences,
+              preferences: { getPreferences: () => exportOptions.preferences },
               dataService: mongoService,
               output: outputStream,
             });
@@ -529,7 +529,7 @@ fastify.after(() => {
             res = await exportCSVFromAggregation({
               ns: exportOptions.ns,
               aggregation: exportOptions.aggregation,
-              preferences: exportOptions.preferences,
+              preferences: { getPreferences: () => exportOptions.preferences },
               dataService: mongoService,
               output: outputStream,
             });
