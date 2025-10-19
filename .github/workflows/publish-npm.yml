@@ -2,6 +2,11 @@ name: Publish compass-web to npm
 
 on:
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to publish"
+        required: false
+        default: "latest"
 
 jobs:
   publish-npm:
@@ -45,21 +50,8 @@ jobs:
       - run: pnpm i --frozen-lockfile
       - name: Build compass-web
         run: NODE_ENV=production pnpm run build:production
-      - name: Publish compass-web
+      - name: Publish to npmjs
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
-        run: |
-          version=${{ steps.check-version.outputs.version }}
-
-          if [[ "$version" == *alpha* ]]; then
-            tag='--tag alpha'
-          elif [[ "$version" == *beta* ]]; then
-            tag='--tag beta'
-          elif [[ "$TAG" == *rc* ]]; then
-            tag='--tag rc'
-          else
-            tag=''
-          fi
-
-          pnpm publish ${tag} --no-git-checks --access public
+        run: pnpm publish --tag ${{ github.event.inputs.tag }} --no-git-checks --access public
