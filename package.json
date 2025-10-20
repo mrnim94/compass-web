@@ -3,7 +3,7 @@
   "version": "0.2.7",
   "bin": "app.js",
   "scripts": {
-    "format": "./compass/node_modules/.bin/prettier --config ./compass/.prettierrc.json --write \"src/**/*.{ts,tsx}\" \"*.js\"",
+    "format": "./compass/node_modules/.bin/prettier --config ./compass/.prettierrc.json --write \"src/**/*.{ts,tsx,js}\" \"*.js\"",
     "prebuild": "rm -rf dist",
     "build": "ELECTRON_OVERRIDE_DIST_PATH=/dev/null ELECTRON_SKIP_BINARY_DOWNLOAD=1 compass/node_modules/.bin/webpack",
     "build:production": "ELECTRON_OVERRIDE_DIST_PATH=/dev/null ELECTRON_SKIP_BINARY_DOWNLOAD=1 compass/node_modules/.bin/webpack --mode production",
