@@ -2,6 +2,9 @@ const fastify = require('./app');
 
 const args = fastify.args;
 
+/** * @type {import('node-cache')}*/
+const exportIds = fastify.exportIds;
+
 let shuttingDown = false;
 
 fastify.listen({ port: args.port, host: args.host }, (err, address) => {
@@ -29,6 +32,7 @@ fastify.listen({ port: args.port, host: args.host }, (err, address) => {
 
     try {
       await fastify.close();
+      exportIds.close();
       console.log('Server closed successfully.');
     } catch (shutdownError) {
       console.error('Error during server shutdown:', shutdownError);
