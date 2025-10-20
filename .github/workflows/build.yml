@@ -3,7 +3,7 @@ name: Build
 on:
   workflow_dispatch:
   push:
-    branches: ['*']
+    branches: ["*"]
 
 permissions:
   contents: read
@@ -35,7 +35,9 @@ jobs:
         run: bash bootstrap.sh
       - run: pnpm i --frozen-lockfile
       - name: Build frontend
-        run: pnpm run build:production
+        run: pnpm run build-client
+      - name: Build backend
+        run: pnpm run build-server
       - name: Generate npm tarball
         run: |
           pnpm pack

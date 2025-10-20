@@ -1,9 +1,0 @@
-{
-  "name": "compass-preferences-model",
-  "exports": {
-    ".": {
-      "require": "./index.js"
-    },
-    "./provider": "./provider.js"
-  }
-}

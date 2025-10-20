@@ -131,3 +131,6 @@ dist
 
 .yarn/
 .vscode/launch.json
+
+out/
+compass-import-export/

@@ -29,14 +29,14 @@ fastify.decorate('exportIds', exportIds);
 fastify.decorate('mongoClients', mongoClients);
 
 fastify.register(require('@fastify/static'), {
-  root: path.join(__dirname, '..', 'dist'),
+  root: __dirname,
 });
 
 fastify.register(require('@fastify/view'), {
   engine: {
     eta: new Eta(),
   },
-  root: path.join(__dirname, '..', 'dist'),
+  root: __dirname,
 });
 
 fastify.register(require('@fastify/websocket'));

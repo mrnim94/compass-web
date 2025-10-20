@@ -6,29 +6,25 @@ const DataService = require('./data-service');
 const {
   exportJSONFromQuery,
   exportJSONFromAggregation,
-} = require('../compass/packages/compass-import-export/dist/export/export-json');
+} = require('../compass-import-export/export/export-json');
 const {
   exportCSVFromQuery,
   exportCSVFromAggregation,
-} = require('../compass/packages/compass-import-export/dist/export/export-csv');
+} = require('../compass-import-export/export/export-csv');
 const {
   gatherFieldsFromQuery,
-} = require('../compass/packages/compass-import-export/dist/export/gather-fields');
-const {
-  importJSON,
-} = require('../compass/packages/compass-import-export/dist/import/import-json');
+} = require('../compass-import-export/export/gather-fields');
+const { importJSON } = require('../compass-import-export/import/import-json');
 const {
   guessFileType,
-} = require('../compass/packages/compass-import-export/dist/import/guess-filetype');
-const {
-  importCSV,
-} = require('../compass/packages/compass-import-export/dist/import/import-csv');
+} = require('../compass-import-export/import/guess-filetype');
+const { importCSV } = require('../compass-import-export/import/import-csv');
 const {
   listCSVFields,
-} = require('../compass/packages/compass-import-export/dist/import/list-csv-fields');
+} = require('../compass-import-export/import/list-csv-fields');
 const {
   analyzeCSVFields,
-} = require('../compass/packages/compass-import-export/dist/import/analyze-csv-fields');
+} = require('../compass-import-export/import/analyze-csv-fields');
 const pkgJson = require('../package.json');
 
 /**
