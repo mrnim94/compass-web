@@ -1,5 +1,6 @@
 {
   "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "prettier.configPath": "./compass/.prettierrc.json",
+  "prettier.prettierPath": "./compass/node_modules/.bin/prettier",
   "files.trimTrailingWhitespace": true,
-  "editor.tabSize": 2
 }

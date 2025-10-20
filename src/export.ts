@@ -1,11 +1,12 @@
 import _ from 'lodash';
-import { ExportActionTypes, cancelExport, FieldsToExport, getIdForSchemaPath } from '../compass/packages/compass-import-export/src/modules/export';
 import {
-  createProjectionFromSchemaFields,
-} from '../compass/packages/compass-import-export/src/export/gather-fields';
-import type {
-  ExportResult,
-} from '../compass/packages/compass-import-export/src/export/export-types';
+  ExportActionTypes,
+  cancelExport,
+  FieldsToExport,
+  getIdForSchemaPath,
+} from '../compass/packages/compass-import-export/src/modules/export';
+import { createProjectionFromSchemaFields } from '../compass/packages/compass-import-export/src/export/gather-fields';
+import type { ExportResult } from '../compass/packages/compass-import-export/src/export/export-types';
 import { queryHasProjection } from '../compass/packages/compass-import-export/src/utils/query-has-projection';
 import type { CSVExportPhase } from '../compass/packages/compass-import-export/src/export/export-csv';
 import {
@@ -70,10 +71,10 @@ export const runExport = ({
     const query =
       exportFullCollection || aggregation
         ? {
-          filter: {},
-        }
+            filter: {},
+          }
         : selectedFieldOption === 'select-fields'
-          ? {
+        ? {
             ...(_query ?? {
               filter: {},
             }),
@@ -89,7 +90,7 @@ export const runExport = ({
                 .map((field) => field.path)
             ),
           }
-          : _query;
+        : _query;
 
     log.info(mongoLogId(1_001_000_185), 'Export', 'Start export', {
       namespace,
@@ -128,7 +129,7 @@ export const runExport = ({
         csvPhase,
       });
     },
-      1000);
+    1000);
 
     let exportResult: ExportResult | undefined;
     try {
@@ -136,7 +137,11 @@ export const runExport = ({
         throw new Error('ConnectionId not provided');
       }
 
-      const baseExportOptions = { connectionId, ns: namespace, preferences: userPreferences }
+      const baseExportOptions = {
+        connectionId,
+        ns: namespace,
+        preferences: userPreferences,
+      };
 
       let response;
       if (aggregation) {
@@ -147,19 +152,27 @@ export const runExport = ({
             headers: {
               'Content-Type': 'application/json',
               // @ts-ignore
-              'csrf-token': document.querySelector('meta[name="csrf-token" i]')?.content ?? ''
-            }
-          })
+              'csrf-token':
+                document.querySelector('meta[name="csrf-token" i]')?.content ??
+                '',
+            },
+          });
         } else {
-          response = (await fetch('/export-json', {
+          response = await fetch('/export-json', {
             method: 'POST',
-            body: JSON.stringify({ ...baseExportOptions, aggregation, jsonFormatVariant }),
+            body: JSON.stringify({
+              ...baseExportOptions,
+              aggregation,
+              jsonFormatVariant,
+            }),
             headers: {
               'Content-Type': 'application/json',
               // @ts-ignore
-              'csrf-token': document.querySelector('meta[name="csrf-token" i]')?.content ?? ''
-            }
-          }))
+              'csrf-token':
+                document.querySelector('meta[name="csrf-token" i]')?.content ??
+                '',
+            },
+          });
         }
       } else {
         if (fileType === 'csv') {
@@ -169,25 +182,33 @@ export const runExport = ({
             headers: {
               'Content-Type': 'application/json',
               // @ts-ignore
-              'csrf-token': document.querySelector('meta[name="csrf-token" i]')?.content ?? ''
-            }
-          })
+              'csrf-token':
+                document.querySelector('meta[name="csrf-token" i]')?.content ??
+                '',
+            },
+          });
         } else {
           response = await fetch('/export-json', {
             method: 'POST',
-            body: JSON.stringify({ ...baseExportOptions, query, jsonFormatVariant }),
+            body: JSON.stringify({
+              ...baseExportOptions,
+              query,
+              jsonFormatVariant,
+            }),
             headers: {
               'Content-Type': 'application/json',
               // @ts-ignore
-              'csrf-token': document.querySelector('meta[name="csrf-token" i]')?.content ?? ''
-            }
-          })
+              'csrf-token':
+                document.querySelector('meta[name="csrf-token" i]')?.content ??
+                '',
+            },
+          });
         }
       }
 
       const exportId = await response.text();
 
-      window.open(`/export/${exportId}`, '_blank')
+      window.open(`/export/${exportId}`, '_blank');
 
       // log.info(mongoLogId(1_001_000_186), 'Export', 'Finished export', {
       //     namespace,
@@ -223,8 +244,8 @@ export const runExport = ({
             : queryHasProjection(_query),
         field_option:
           exportFullCollection ||
-            aggregation ||
-            (_query && queryHasProjection(_query))
+          aggregation ||
+          (_query && queryHasProjection(_query))
             ? undefined
             : selectedFieldOption,
         file_type: fileType,
@@ -279,11 +300,7 @@ export const selectFieldsToExport = (): ExportThunkAction<
   | FetchFieldsToExportErrorAction
   | FetchFieldsToExportSuccessAction
 > => {
-  return async (
-    dispatch,
-    getState,
-    { logger: { log, mongoLogId } }
-  ) => {
+  return async (dispatch, getState, { logger: { log, mongoLogId } }) => {
     dispatch({
       type: ExportActionTypes.SelectFieldsToExport,
     });
@@ -306,7 +323,7 @@ export const selectFieldsToExport = (): ExportThunkAction<
         throw new Error('ConnectionId not provided');
       }
 
-      const res = await fetch("/gather-fields", {
+      const res = await fetch('/gather-fields', {
         method: 'POST',
         body: JSON.stringify({
           connectionId: connectionId,
@@ -317,11 +334,12 @@ export const selectFieldsToExport = (): ExportThunkAction<
         headers: {
           'Content-Type': 'application/json',
           // @ts-ignore
-          'csrf-token': document.querySelector('meta[name="csrf-token" i]')?.content ?? ''
-        }
-      })
+          'csrf-token':
+            document.querySelector('meta[name="csrf-token" i]')?.content ?? '',
+        },
+      });
 
-      gatherFieldsResult = await res.json()
+      gatherFieldsResult = await res.json();
     } catch (err: any) {
       log.error(
         mongoLogId(1_001_000_184),
@@ -354,5 +372,3 @@ export const selectFieldsToExport = (): ExportThunkAction<
     });
   };
 };
-
-

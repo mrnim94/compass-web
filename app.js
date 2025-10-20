@@ -158,7 +158,6 @@ async function createClientSafeConnectionString(raw) {
   }
 }
 
-
 // Validate basic auth settings
 let basicAuth = null;
 
@@ -408,7 +407,9 @@ fastify.after(() => {
     async (request, reply) => {
       const connectionInfos = await Promise.all(
         mongoURIs.map(async ({ uri, id, raw }) => {
-          const clientConnectionString = await createClientSafeConnectionString(raw);
+          const clientConnectionString = await createClientSafeConnectionString(
+            raw
+          );
           return {
             id: id,
             connectionOptions: {
@@ -418,7 +419,10 @@ fastify.after(() => {
               orgId: args.orgId,
               projectId: args.projectId,
               clusterUniqueId: args.clusterId,
-              clusterName: (uri.hosts && uri.hosts[0]) || uri.hostname || 'unknown-cluster',
+              clusterName:
+                (uri.hosts && uri.hosts[0]) ||
+                uri.hostname ||
+                'unknown-cluster',
               clusterType: 'REPLICASET',
               clusterState: 'IDLE',
               metricsId: 'metricsid',

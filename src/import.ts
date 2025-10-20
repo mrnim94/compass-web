@@ -13,7 +13,10 @@ import {
 import { CSVParsableFieldType } from '../compass/packages/compass-import-export/src/csv/csv-types';
 import type { ImportThunkAction } from '../compass/packages/compass-import-export/src/stores/import-store';
 import FILE_TYPES from '../compass/packages/compass-import-export/src/constants/file-types';
-import { onStarted, cancelImport } from '../compass/packages/compass-import-export/src/modules/import'
+import {
+  onStarted,
+  cancelImport,
+} from '../compass/packages/compass-import-export/src/modules/import';
 import {
   showBloatedDocumentSignalToast,
   showUnboundArraySignalToast,
@@ -24,9 +27,11 @@ import {
   showInProgressToast,
   showStartingToast,
 } from '../compass/packages/compass-import-export/src/components/import-toast';
-import { showErrorDetails } from '../compass/packages/compass-components/src/hooks/use-error-details'
-import { ErrorJSON, ImportResult } from '../compass/packages/compass-import-export/src/import/import-types';
-
+import { showErrorDetails } from '../compass/packages/compass-components/src/hooks/use-error-details';
+import {
+  ErrorJSON,
+  ImportResult,
+} from '../compass/packages/compass-import-export/src/import/import-types';
 
 function csvHeaderNameToFieldName(name: string) {
   return name.replace(/\[\d+\]/g, '[]');
@@ -36,7 +41,6 @@ const onFileSelectError = (error: Error) => ({
   type: FILE_SELECT_ERROR,
   error,
 });
-
 
 const onFailed = (error: Error) => ({ type: FAILED, error });
 
@@ -56,19 +60,19 @@ const loadCSVPreviewDocs = (file: File): ImportThunkAction<Promise<void>> => {
   return async (dispatch, getState, { logger: { log, mongoLogId } }) => {
     const { delimiter, newline } = getState().import;
     try {
-
-      const formData = new FormData()
+      const formData = new FormData();
       formData.append('file', file);
-      formData.append('json', JSON.stringify({ delimiter, newline }))
+      formData.append('json', JSON.stringify({ delimiter, newline }));
 
-      let resp = await fetch("/list-csv-fields", {
+      let resp = await fetch('/list-csv-fields', {
         method: 'POST',
         body: formData,
         headers: {
           // @ts-ignore
-          'csrf-token': document.querySelector('meta[name="csrf-token" i]')?.content ?? ''
-        }
-      })
+          'csrf-token':
+            document.querySelector('meta[name="csrf-token" i]')?.content ?? '',
+        },
+      });
 
       // const result = await listCSVFields({ input, delimiter, newline });
       const result = await resp.json();
@@ -159,7 +163,7 @@ const loadTypes = (
     }
 
     const abortController = new AbortController();
-    const fileSize = file.size
+    const fileSize = file.size;
     dispatch({
       type: ANALYZE_STARTED,
       abortController,
@@ -167,22 +171,26 @@ const loadTypes = (
     });
 
     try {
-
-      const formData = new FormData()
+      const formData = new FormData();
       formData.append('file', file);
-      formData.append('json', JSON.stringify({
-        delimiter, newline, ignoreEmptyStrings: ignoreBlanks
-      }))
+      formData.append(
+        'json',
+        JSON.stringify({
+          delimiter,
+          newline,
+          ignoreEmptyStrings: ignoreBlanks,
+        })
+      );
 
-      const resp = await fetch("/analyze-csv-fields", {
-        method: "POST",
+      const resp = await fetch('/analyze-csv-fields', {
+        method: 'POST',
         body: formData,
         headers: {
           // @ts-ignore
-          'csrf-token': document.querySelector('meta[name="csrf-token" i]')?.content ?? ''
-        }
-      })
-
+          'csrf-token':
+            document.querySelector('meta[name="csrf-token" i]')?.content ?? '',
+        },
+      });
 
       const result = await resp.json();
       // const result = await analyzeCSVFields({
@@ -224,7 +232,6 @@ const loadTypes = (
   };
 };
 
-
 export const selectImportFile = (
   file: File
 ): ImportThunkAction<Promise<void>> => {
@@ -232,7 +239,7 @@ export const selectImportFile = (
     try {
       // const detected = await guessFileType({ input });
       // guess file type
-      const formData = new FormData()
+      const formData = new FormData();
       formData.append('file', file);
 
       const resp = await fetch('/guess-filetype', {
@@ -240,11 +247,12 @@ export const selectImportFile = (
         body: formData,
         headers: {
           // @ts-ignore
-          'csrf-token': document.querySelector('meta[name="csrf-token" i]')?.content ?? ''
-        }
-      })
+          'csrf-token':
+            document.querySelector('meta[name="csrf-token" i]')?.content ?? '',
+        },
+      });
 
-      const detected = await resp.json()
+      const detected = await resp.json();
       if (detected.type === 'unknown') {
         throw new Error('Cannot determine the file type');
       }
@@ -260,7 +268,7 @@ export const selectImportFile = (
         fileName: file.name,
         fileStats: {},
         fileIsMultilineJSON,
-        fileType
+        fileType,
       });
 
       // We only ever display preview rows for CSV files underneath the field
@@ -284,15 +292,15 @@ export const selectImportFile = (
           'The encoded data was not valid for encoding utf-8'
         )
       ) {
-        err.message = `Unable to load the file. Make sure the file is valid CSV or JSON. Error: ${err?.message as string
-          }`;
+        err.message = `Unable to load the file. Make sure the file is valid CSV or JSON. Error: ${
+          err?.message as string
+        }`;
       }
 
       dispatch(onFileSelectError(new Error(err)));
     }
   };
 };
-
 
 export const startImport = (file: File): ImportThunkAction<Promise<void>> => {
   return async (
@@ -334,7 +342,6 @@ export const startImport = (file: File): ImportThunkAction<Promise<void>> => {
       }
       fields[name] = type;
     }
-
 
     const firstErrors: ErrorJSON[] = [];
 
@@ -382,46 +389,54 @@ export const startImport = (file: File): ImportThunkAction<Promise<void>> => {
       formData.append('file', file);
 
       if (fileType === 'csv') {
-        formData.append('json', JSON.stringify({
-          ns,
-          delimiter,
-          newline,
-          fields,
-          stopOnErrors,
-          ignoreEmptyStrings: ignoreBlanks,
-          connectionId
-        }))
+        formData.append(
+          'json',
+          JSON.stringify({
+            ns,
+            delimiter,
+            newline,
+            fields,
+            stopOnErrors,
+            ignoreEmptyStrings: ignoreBlanks,
+            connectionId,
+          })
+        );
 
         const resp = await fetch('/upload-csv', {
           method: 'POST',
           body: formData,
           headers: {
             // @ts-ignore
-            'csrf-token': document.querySelector('meta[name="csrf-token" i]')?.content ?? ''
-          }
+            'csrf-token':
+              document.querySelector('meta[name="csrf-token" i]')?.content ??
+              '',
+          },
         });
 
-        result = await resp.json()
-
+        result = await resp.json();
       } else {
-        formData.append('json', JSON.stringify({
-          ns,
-          stopOnErrors,
-          jsonVariant: fileIsMultilineJSON ? 'jsonl' : 'json',
-          connectionId
-        }))
+        formData.append(
+          'json',
+          JSON.stringify({
+            ns,
+            stopOnErrors,
+            jsonVariant: fileIsMultilineJSON ? 'jsonl' : 'json',
+            connectionId,
+          })
+        );
         const resp = await fetch('/upload-json', {
           method: 'POST',
           body: formData,
           headers: {
             // @ts-ignore
-            'csrf-token': document.querySelector('meta[name="csrf-token" i]')?.content ?? ''
-          }
+            'csrf-token':
+              document.querySelector('meta[name="csrf-token" i]')?.content ??
+              '',
+          },
         });
 
-        result = await resp.json()
+        result = await resp.json();
       }
-
     } catch (err: any) {
       track(
         'Import Completed',
@@ -453,11 +468,11 @@ export const startImport = (file: File): ImportThunkAction<Promise<void>> => {
       showFailedToast(
         err as Error,
         errInfo &&
-        (() =>
-          showErrorDetails({
-            details: errInfo,
-            closeAction: 'close',
-          }))
+          (() =>
+            showErrorDetails({
+              details: errInfo,
+              closeAction: 'close',
+            }))
       );
 
       dispatch(onFailed(err as Error));
@@ -487,8 +502,6 @@ export const startImport = (file: File): ImportThunkAction<Promise<void>> => {
       docsProcessed: result.docsProcessed,
     });
 
-
-
     if (result.aborted) {
       showCancelledToast({
         errors: firstErrors,
@@ -496,10 +509,10 @@ export const startImport = (file: File): ImportThunkAction<Promise<void>> => {
     } else {
       const onReviewDocumentsClick = appRegistry
         ? () => {
-          workspaces.openCollectionWorkspace(connectionId, ns, {
-            newTab: true,
-          });
-        }
+            workspaces.openCollectionWorkspace(connectionId, ns, {
+              newTab: true,
+            });
+          }
         : undefined;
 
       if (result.biggestDocSize > 10_000_000) {
@@ -543,10 +556,8 @@ export const startImport = (file: File): ImportThunkAction<Promise<void>> => {
       hasTransformed: transform.length > 0,
     };
 
-
     appRegistry.emit('import-finished', payload, {
       connectionId,
     });
-
   };
 };

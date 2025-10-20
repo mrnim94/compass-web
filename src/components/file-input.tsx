@@ -20,7 +20,10 @@ import {
   Link,
   Description,
 } from '../../compass/packages/compass-components/src/components/leafygreen';
-import { ElectronFileDialogOptions, FileInputBackend } from '../../compass/packages/compass-components/src/components/file-input'
+import {
+  ElectronFileDialogOptions,
+  FileInputBackend,
+} from '../../compass/packages/compass-components/src/components/file-input';
 
 const { base: redBaseColor } = palette.red;
 
@@ -135,8 +138,6 @@ const disabledDescriptionDarkStyles = css({
 
 type FileInputVariant = 'default' | 'small' | 'vertical';
 
-
-
 type FileChooserOptions = {
   multi?: boolean;
   mode: 'open' | 'save';
@@ -158,7 +159,6 @@ function useFileInputBackend() {
 
   return fileInputBackend.current;
 }
-
 
 function FileInput({
   autoOpen = false,
