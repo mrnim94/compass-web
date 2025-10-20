@@ -45,9 +45,9 @@ function registerRoutes(instance) {
     '/explorer/v1/groups/:projectId/clusters/connectionInfo',
     async (request, reply) => {
       const connectionInfos = await Promise.all(
-        args.mongoURIs.map(async ({ uri, id, raw }) => {
+        args.mongoURIs.map(async ({ uri, id }) => {
           const clientConnectionString = await createClientSafeConnectionString(
-            raw
+            uri
           );
           return {
             id: id,
@@ -84,16 +84,18 @@ function registerRoutes(instance) {
   });
 }
 
-// Create a client-safe connection string that avoids problematic SRV parsing in the frontend.
-// The compass frontend has code paths that assume hosts array exists when parsing connection strings.
-// For SRV URIs, we'll resolve the actual hosts and ports using the MongoDB driver utilities.
-async function createClientSafeConnectionString(raw) {
+/**
+ * Create a client-safe connection string that avoids problematic SRV parsing in the frontend.
+ * The compass frontend has code paths that assume hosts array exists when parsing connection strings.
+ * For SRV URIs, we'll resolve the actual hosts and ports using the MongoDB driver utilities.
+ * @param {import('mongodb-connection-string-url').ConnectionString} cs
+ */
+async function createClientSafeConnectionString(cs) {
   try {
-    const cs = new ConnectionString(raw);
     const isSrv = cs.protocol && cs.protocol.includes('srv');
 
     if (!isSrv) {
-      return raw; // Non-SRV URIs are fine as-is
+      return cs.href; // Non-SRV URIs are fine as-is
     }
 
     const res = await resolveSRVRecord(parseOptions(cs.toString()));
@@ -103,7 +105,7 @@ async function createClientSafeConnectionString(raw) {
 
     return cs.toString();
   } catch (_e) {
-    return raw; // Fallback to original if SRV resolution fails
+    return cs.href; // Fallback to original if SRV resolution fails
   }
 }
 

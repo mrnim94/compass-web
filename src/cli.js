@@ -68,7 +68,6 @@ function readCliArgs() {
 
       mongoURIs.push({
         uri: mongoUri,
-        raw: uri,
         id: crypto.randomBytes(8).toString('hex'),
       });
     } catch (err) {
