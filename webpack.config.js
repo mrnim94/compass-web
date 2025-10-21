@@ -1,8 +1,9 @@
 const path = require('path');
-const fs = require('fs');
 const { webpack, merge } = require('./compass/configs/webpack-config-compass');
 const compassWebConfig = require('./compass/packages/compass-web/webpack.config');
 const CopyPlugin = require('copy-webpack-plugin');
+
+const isProduction = process.env.NODE_ENV === 'production';
 
 function resolveFromCompass(name) {
   return require.resolve(name, {
@@ -21,18 +22,19 @@ function localPolyfill(name) {
 }
 
 module.exports = (env, args) => {
-  const config = compassWebConfig(env, args);
+  const config = compassWebConfig({}, {});
 
   delete config.externals;
   delete config.resolve.alias.stream;
 
   config.output = {
     path: config.output.path,
-    filename: config.output.filename,
+    filename: 'compass.js',
     assetModuleFilename: config.output.assetModuleFilename,
   };
 
   return merge(config, {
+    mode: isProduction ? 'production' : 'development',
     context: __dirname,
     entry: path.resolve(__dirname, 'src', 'index.tsx'),
     plugins: [
@@ -40,43 +42,11 @@ module.exports = (env, args) => {
         patterns: ['src/index.eta', 'src/favicon.svg'],
       }),
       new webpack.DefinePlugin({
-        'process.env.ENABLE_DEBUG': args.mode != 'production',
-        'process.env.ENABLE_INFO': args.mode != 'production',
+        'process.env.ENABLE_DEBUG': !isProduction,
+        'process.env.ENABLE_INFO': !isProduction,
       }),
-      {
-        apply: (compiler) => {
-          compiler.hooks.afterEmit.tap(
-            'MoveCompassImportExportBuildPlugin',
-            (_) => {
-              const compassImportExportDirPath = path.join(
-                config.output.path,
-                'compass-import-export'
-              );
-
-              if (!fs.existsSync(compassImportExportDirPath)) {
-                fs.mkdirSync(compassImportExportDirPath);
-
-                ['csv', 'import', 'export', 'utils'].forEach((subdir) => {
-                  fs.cpSync(
-                    path.join(
-                      __dirname,
-                      ...(
-                        'compass/packages/compass-import-export/dist/' + subdir
-                      ).split('/')
-                    ),
-                    path.join(compassImportExportDirPath, subdir),
-                    {
-                      recursive: true,
-                    }
-                  );
-                });
-              }
-            }
-          );
-        },
-      },
     ],
-    devtool: args.mode == 'production' ? false : 'source-map',
+    devtool: isProduction ? false : 'source-map',
     resolve: {
       alias: {
         'core-js/modules': path.resolve(

@@ -55,6 +55,6 @@
     <div id="sandbox-app">
       <div class="loader-before-app-loads"></div>
     </div>
-    <script src="/main.js"></script>
+    <script src="/compass.js"></script>
   </body>
 </html>

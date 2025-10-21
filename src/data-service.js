@@ -1,16 +1,13 @@
-const { MongoClient } = require('mongodb');
+'use strict';
+
 const { MongoDBCollectionNamespace } = require('mongodb/lib/utils');
 
 class DataService {
-  _mongoClient;
+  /** @type {import('mongodb').MongoClient} */
+  mongoClient;
 
-  /**
-   *
-   * @param {string} url
-   * @param {import('mongodb').MongoClientOptions} options
-   */
-  constructor(url, options = {}) {
-    this._mongoClient = new MongoClient(url, options);
+  constructor(mongoClient) {
+    this.mongoClient = mongoClient;
   }
 
   /**
@@ -22,7 +19,7 @@ class DataService {
   bulkWrite(ns, operations, options) {
     const namespace = MongoDBCollectionNamespace.fromString(ns);
 
-    return this._mongoClient
+    return this.mongoClient
       .db(namespace.db)
       .collection(namespace.collection)
       .bulkWrite(operations, options);
@@ -37,7 +34,7 @@ class DataService {
    */
   insertOne(ns, doc, options) {
     const namespace = MongoDBCollectionNamespace.fromString(ns);
-    return this._mongoClient
+    return this.mongoClient
       .db(namespace.db)
       .collection(namespace.collection)
       .insertOne(doc, options);
@@ -52,7 +49,7 @@ class DataService {
    */
   aggregateCursor(ns, pipeline, options) {
     const namespace = MongoDBCollectionNamespace.fromString(ns);
-    return this._mongoClient
+    return this.mongoClient
       .db(namespace.db)
       .collection(namespace.collection)
       .aggregate(pipeline, options);
@@ -67,17 +64,10 @@ class DataService {
    */
   findCursor(ns, filter, options) {
     const namespace = MongoDBCollectionNamespace.fromString(ns);
-    return this._mongoClient
+    return this.mongoClient
       .db(namespace.db)
       .collection(namespace.collection)
       .find(filter, options);
-  }
-
-  /**
-   * Disconnect the service
-   */
-  disconnect() {
-    return this._mongoClient.close();
   }
 }
 

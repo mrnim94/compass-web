@@ -1,12 +1,14 @@
 {
   "name": "compass-web",
   "version": "0.2.7",
-  "bin": "app.js",
+  "bin": "./dist/server.js",
   "scripts": {
-    "format": "./compass/node_modules/.bin/prettier --config ./compass/.prettierrc.json --write \"src/**/*.{ts,tsx}\" \"*.js\"",
+    "format": "./compass/node_modules/.bin/prettier --config ./compass/.prettierrc.json --write \"src/**/*.{ts,tsx,js}\" \"*.js\" \"vendors/*.js\" ",
     "prebuild": "rm -rf dist",
-    "build": "ELECTRON_OVERRIDE_DIST_PATH=/dev/null ELECTRON_SKIP_BINARY_DOWNLOAD=1 compass/node_modules/.bin/webpack",
-    "build:production": "ELECTRON_OVERRIDE_DIST_PATH=/dev/null ELECTRON_SKIP_BINARY_DOWNLOAD=1 compass/node_modules/.bin/webpack --mode production",
+    "build-client": "ELECTRON_OVERRIDE_DIST_PATH=/dev/null ELECTRON_SKIP_BINARY_DOWNLOAD=1 compass/node_modules/.bin/webpack",
+    "build-client:production": "ELECTRON_OVERRIDE_DIST_PATH=/dev/null ELECTRON_SKIP_BINARY_DOWNLOAD=1 NODE_ENV=production compass/node_modules/.bin/webpack",
+    "build-server": "rollup -c",
+    "build-server:production": "NODE_ENV=production rollup -c",
     "start": "node app.js"
   },
   "author": "Haohan Yang",
@@ -29,16 +31,11 @@
     "@fastify/static": "^8.2.0",
     "@fastify/view": "^11.1.0",
     "@fastify/websocket": "^11.1.0",
-    "bson": "^6.10.4",
-    "compass-preferences-model": "file:./vendors/compass-preferences-model",
-    "debug": "file:./vendors/debug",
     "eta": "^3.5.0",
     "fastify": "^5.3.3",
-    "hadron-document": "file:./vendors/hadron-document",
     "lodash": "^4.17.21",
     "mongodb": "^6.17.0",
     "mongodb-connection-string-url": "^3.0.2",
-    "mongodb-ns": "file:./vendors/mongodb-ns",
     "mongodb-schema": "^12.5.2",
     "node-cache": "^5.1.2",
     "papaparse": "^5.3.2",
@@ -47,8 +44,12 @@
     "yargs": "^17.7.2"
   },
   "devDependencies": {
+    "@rollup/plugin-alias": "^5.1.1",
+    "@rollup/plugin-commonjs": "^28.0.8",
+    "@rollup/plugin-json": "^6.1.0",
     "copy-webpack-plugin": "^13.0.0",
-    "dotenv": "^16.5.0"
+    "dotenv": "^16.5.0",
+    "rollup": "^4.52.5"
   },
   "pnpm": {},
   "keywords": [
