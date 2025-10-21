@@ -1,3 +1,5 @@
+'use strict';
+
 const { MongoDBCollectionNamespace } = require('mongodb/lib/utils');
 
 class DataService {

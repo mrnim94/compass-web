@@ -1,3 +1,5 @@
+'use strict';
+
 const crypto = require('crypto');
 const yargs = require('yargs');
 const { hideBin } = require('yargs/helpers');

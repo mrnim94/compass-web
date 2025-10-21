@@ -1,4 +1,5 @@
-const path = require('path');
+'use strict';
+
 const { MongoClient } = require('mongodb');
 const { Eta } = require('eta');
 const NodeCache = require('node-cache');

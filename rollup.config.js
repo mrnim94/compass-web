@@ -11,7 +11,7 @@ const options = {
   input: './src/server.js',
   output: {
     format: 'cjs',
-    file: './main.js',
+    file: './dist/server.js',
   },
   external: [
     ...require('module').builtinModules,

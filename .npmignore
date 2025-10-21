@@ -29,3 +29,5 @@ jest.config.js
 scripts
 .prettierignore
 compass-import-export
+rollup.config.js
+vendors

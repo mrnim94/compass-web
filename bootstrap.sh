@@ -17,4 +17,4 @@ node_modules/.bin/lerna run bootstrap --stream \
     --ignore @mongodb-js/compass-test-server \
     --ignore @mongodb-js/compass-web
 
-cp -r ./compass/packages/compass-import-export/dist/ ./compass-import-export
+cp -r ./packages/compass-import-export/dist/ ../compass-import-export

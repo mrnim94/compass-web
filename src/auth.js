@@ -1,3 +1,5 @@
+'use strict';
+
 /**
  *
  * @param {import('fastify').FastifyInstance} instance
