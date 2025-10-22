@@ -1,7 +1,8 @@
 const crypto = require('crypto');
 const { Writable } = require('stream');
-const { resolveSRVRecord } = require('mongodb/lib/connection_string');
 const { MongoDBNamespace } = require('mongodb/lib/utils');
+const { promises: dns } = require('dns');
+const { ConnectionString } = require('mongodb-connection-string-url');
 const DataService = require('./data-service');
 const {
   exportJSONFromQuery,
@@ -401,25 +402,65 @@ function registerRoutes(instance) {
 /**
  * Create a client-safe connection string that avoids problematic SRV parsing in the frontend.
  * The compass frontend has code paths that assume hosts array exists when parsing connection strings.
- * For SRV URIs, we'll resolve the actual hosts and ports using the MongoDB driver utilities.
+ * For SRV URIs, we'll resolve the actual hosts and ports using DNS SRV record lookup.
  * @param {import('mongodb-connection-string-url').ConnectionString} cs
  */
 async function createClientSafeConnectionString(cs) {
   try {
-    const isSrv = cs.protocol && cs.protocol.includes('srv');
+    const isSrv = cs.isSRV;
 
     if (!isSrv) {
       return cs.href; // Non-SRV URIs are fine as-is
     }
 
-    const res = await resolveSRVRecord(parseOptions(cs.toString()));
-    cs.protocol = 'mongodb';
-    cs.isSRV = false;
-    cs.hosts = res.map((address) => address.toString());
+    // Manually resolve SRV record using DNS
+    const hostname = cs.hosts[0] || cs.hostname;
+    const srvRecord = `_mongodb._tcp.${hostname}`;
 
-    return cs.toString();
-  } catch (_e) {
+    try {
+      const records = await dns.resolveSrv(srvRecord);
+
+      if (records && records.length > 0) {
+        // Build new connection string with resolved hosts
+        const resolvedHosts = records.map(record => `${record.name}:${record.port}`);
+        console.log(`Resolved SRV ${srvRecord} to:`, resolvedHosts);
+
+        // Create new ConnectionString with mongodb:// protocol and resolved hosts
+        const newCs = new ConnectionString(
+          `mongodb://${resolvedHosts.join(',')}/${cs.pathname}${cs.search}`
+        );
+
+        // Copy authentication and other options
+        if (cs.username) newCs.username = cs.username;
+        if (cs.password) newCs.password = cs.password;
+
+        return newCs.href;
+      }
+    } catch (dnsError) {
+      console.log(`DNS SRV resolution failed for ${srvRecord}:`, dnsError.message);
+
+      // For Azure CosmosDB, try fallback to standard ports
+      // Note: CosmosDB may use 10255 (legacy) or 10260 (newer clusters)
+      if (hostname && hostname.includes('cosmos.azure.com')) {
+        console.log('Detected Azure CosmosDB, attempting fallback with port 10260');
+
+        // Create new ConnectionString with fallback host and port
+        const newCs = new ConnectionString(
+          `mongodb://${hostname}:10260/${cs.pathname}${cs.search}`
+        );
+
+        // Copy authentication and other options
+        if (cs.username) newCs.username = cs.username;
+        if (cs.password) newCs.password = cs.password;
+
+        return newCs.href;
+      }
+    }
+
     return cs.href; // Fallback to original if SRV resolution fails
+  } catch (_e) {
+    console.error('Error in createClientSafeConnectionString:', _e);
+    return cs.href; // Fallback to original if any error occurs
   }
 }
 
