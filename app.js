@@ -144,17 +144,31 @@ async function createClientSafeConnectionString(raw) {
     const cs = new ConnectionString(raw);
     const isSrv = cs.protocol && cs.protocol.includes('srv');
 
+    console.log('DEBUG - createClientSafeConnectionString:');
+    console.log('  Input:', raw);
+    console.log('  isSrv:', isSrv);
+    console.log('  cs.protocol:', cs.protocol);
+    console.log('  cs.hostname:', cs.hostname);
+    console.log('  cs.hosts:', cs.hosts);
+
     if (!isSrv) {
+      console.log('  -> Returning original (not SRV)');
       return raw; // Non-SRV URIs are fine as-is
     }
 
     const res = await resolveSRVRecord(parseOptions(cs.toString()));
+    console.log('  SRV resolution result:', res);
+
     cs.protocol = 'mongodb';
     cs.isSRV = false;
     cs.hosts = res.map((address) => address.toString());
 
-    return cs.toString();
-  } catch (_e) {
+    const result = cs.toString();
+    console.log('  -> Final result:', result);
+    return result;
+  } catch (err) {
+    console.log('  -> SRV resolution failed:', err.message);
+    console.log('  -> Returning original as fallback');
     return raw; // Fallback to original if SRV resolution fails
   }
 }
@@ -410,6 +424,11 @@ fastify.after(() => {
       const connectionInfos = await Promise.all(
         mongoURIs.map(async ({ uri, id, raw }) => {
           const clientConnectionString = await createClientSafeConnectionString(raw);
+          console.log('DEBUG - Connection Info Response:');
+          console.log('  Original:', raw);
+          console.log('  Resolved:', clientConnectionString);
+          console.log('  URI hosts:', uri.hosts);
+          console.log('  URI hostname:', uri.hostname);
           return {
             id: id,
             connectionOptions: {
